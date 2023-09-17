@@ -141,7 +141,6 @@ func ParseInt[P0 string | kelpie.Matcher[string]](input P0) ParseIntInvocationDe
 
 func (a ParseIntInvocationDetails) Return(r0 int, r1 error) Expectation {
     a.result0 = r0
-
     a.result1 = r1
 
 	return Expectation{

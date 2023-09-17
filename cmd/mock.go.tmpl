@@ -2,9 +2,8 @@
 {{ range $i, $param := . }}{{ if $i }}, {{ end }}{{ $param.Name }} {{ $param.Type }}{{ end }}
 {{- end -}}
 
-{{/* TODO: handle named return args */}}
 {{- define "resultList" -}}
-{{ range $i, $returnParam := . }}{{ if $i }}, {{ end }}r{{ $i }} {{ $returnParam.Type }}{{ end }}
+{{ range $i, $returnParam := . }}{{ if $i }}, {{ end }}{{ if $returnParam.Name }}{{ $returnParam.Name }}{{ else }}r{{ $i }}{{ end }} {{ $returnParam.Type }}{{ end }}
 {{- end -}}
 
 {{- define "resultTypeList" -}}
@@ -47,7 +46,7 @@ func (m *Mock) {{ $method.Name }}({{ template "parameterList" $method.Parameters
 					panic(info.panicArg)
 				}
 
-                return {{ range $i, $r := $method.Returns }}{{ if ne $i 0 }}, {{ end }}info.result{{ $i }}{{ end }}
+                return {{ range $i, $r := $method.Returns }}{{ if ne $i 0 }}, {{ end }}info.{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }}{{ end }}
 			}
 		}
 	}
@@ -75,7 +74,7 @@ type {{ $method.Name }}InvocationDetails struct {
     {{ $param.Name }} kelpie.Matcher[{{ $param.Type }}]
     {{- end }}
     {{- range $i, $r := $method.Returns }}
-    result{{ $i }} {{ $r.Type }}
+    {{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }} {{ $r.Type }}
     {{- end }}
 	panicArg any
 	observe {{ template "observationCallback" $method }}
@@ -100,8 +99,9 @@ func {{ $method.Name }}[{{ template "matcherTypeParams" $method.Parameters }}]({
 
 func (a {{ $method.Name }}InvocationDetails) Return({{ template "resultList" $method.Returns }}) Expectation {
 {{- range $i, $r := $method.Returns }}
-    a.result{{ $i }} = r{{ $i }}
-{{ end }}
+    a.{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }} = {{ if $r.Name }}{{ $r.Name }}{{ else }}r{{ $i }}{{ end }}
+{{- end }}
+
 	return Expectation{
 		method:            "{{ $method.Name }}",
 		invocationDetails: a,

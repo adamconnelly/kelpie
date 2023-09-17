@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/adamconnelly/kelpie"
+	"github.com/adamconnelly/kelpie/mocks/emailservice"
 	"github.com/adamconnelly/kelpie/mocks/maths"
 )
 
@@ -13,7 +14,24 @@ type Maths interface {
 	ParseInt(input string) (int, error)
 }
 
+type EmailService interface {
+	Send(sender, recipient, body string) (cost float64, err error)
+}
+
 func main() {
+	emailServiceMock := emailservice.Mock{}
+	emailServiceMock.Setup(emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).Return(0, errors.New("unknown sender!")))
+	emailServiceMock.Setup(emailservice.Send("panic@thedisco.com", kelpie.Any[string](), "testing").Panic("Oh shit!"))
+	emailServiceMock.Setup(emailservice.Send("adam@email.com", "someone@receiver.com", "Hello world!").Return(100.54, nil))
+
+	sendResult0, sendResultErr0 := emailServiceMock.Send("adam@email.com", "someone@receiver.com", "Hello world!")
+	fmt.Printf("Send result 0: %f, err: %v\n", sendResult0, sendResultErr0)
+
+	sendResult1, sendResultErr1 := emailServiceMock.Send("a", "b", "c")
+	fmt.Printf("Send result 1: %f, err: %v\n", sendResult1, sendResultErr1)
+
+	emailServiceMock.Send("panic@thedisco.com", "abc", "testing")
+
 	mock := maths.Mock{}
 	var m Maths = &mock
 
