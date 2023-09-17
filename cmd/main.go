@@ -4,92 +4,47 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"strings"
 	"text/template"
+
+	"github.com/adamconnelly/kelpie/parser"
 )
-
-type MockedInterface struct {
-	Name        string
-	PackageName string
-	Methods     []MethodDefinition
-}
-
-type MethodDefinition struct {
-	Name       string
-	Parameters []ParameterDefinition
-	Returns    []ReturnDefinition
-}
-
-type ParameterDefinition struct {
-	Name string
-	Type string
-}
-
-type ReturnDefinition struct {
-	Name string
-	Type string
-}
 
 //go:embed "mock.go.tmpl"
 var mockTemplate string
 
 func main() {
-	mockedInterface := MockedInterface{
-		Name:        "Maths",
-		PackageName: strings.ToLower("Maths"),
-		Methods: []MethodDefinition{
-			{
-				Name: "Add",
-				Parameters: []ParameterDefinition{
-					{
-						Name: "a",
-						Type: "int",
-					},
-					{
-						Name: "b",
-						Type: "int",
-					},
-				},
-				Returns: []ReturnDefinition{
-					{
-						Name: "",
-						Type: "int",
-					},
-				},
-			},
-			{
-				Name: "ParseInt",
-				Parameters: []ParameterDefinition{
-					{
-						Name: "input",
-						Type: "string",
-					},
-				},
-				Returns: []ReturnDefinition{
-					{
-						Name: "",
-						Type: "int",
-					},
-					{
-						Name: "",
-						Type: "error",
-					},
-				},
-			},
-		},
+	file, err := os.Open("../examples/main.go")
+	if err != nil {
+		fmt.Printf("Could not open file for parsing: %v", err)
+		return
+	}
+
+	filter := parser.IncludingInterfaceFilter{
+		InterfacesToInclude: []string{"github.com/adamconnelly/kelpie/examples/main.EmailService", "github.com/adamconnelly/kelpie/examples/main.Maths"},
+	}
+
+	mockedInterfaces, err := parser.Parse(file, "github.com/adamconnelly/kelpie/examples/main", &filter)
+	if err != nil {
+		fmt.Printf("Could not parse file: %v", err)
+		return
 	}
 
 	template := template.Must(template.New("mock").Parse(mockTemplate))
 
-	file, err := os.Create("out/generated.go")
-	if err != nil {
-		fmt.Printf("Could not generate file: %v", err)
-		return
-	}
-	defer file.Close()
+	for _, i := range mockedInterfaces {
+		if _, err := os.Stat(fmt.Sprintf("out/%s", i.PackageName)); os.IsNotExist(err) {
+			os.Mkdir(fmt.Sprintf("out/%s", i.PackageName), 0700)
+		}
+		file, err := os.Create(fmt.Sprintf("out/%s/%s.go", i.PackageName, i.PackageName))
+		if err != nil {
+			fmt.Printf("Could not generate file: %v", err)
+			return
+		}
+		defer file.Close()
 
-	if err := template.Execute(file, mockedInterface); err != nil {
-		fmt.Printf("OH NO!!! %v\n", err)
-		return
+		if err := template.Execute(file, i); err != nil {
+			fmt.Printf("OH NO!!! %v\n", err)
+			return
+		}
 	}
 }
