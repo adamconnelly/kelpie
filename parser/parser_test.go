@@ -100,9 +100,9 @@ type NotificationService interface {
 	t.Equal("message", sendNotification.Parameters[1].Name)
 	t.Equal("string", sendNotification.Parameters[1].Type)
 
-	t.Len(sendNotification.Returns, 1)
-	t.Equal("", sendNotification.Returns[0].Name)
-	t.Equal("error", sendNotification.Returns[0].Type)
+	t.Len(sendNotification.Results, 1)
+	t.Equal("", sendNotification.Results[0].Name)
+	t.Equal("error", sendNotification.Results[0].Type)
 
 	broadcastNotification := slices.FirstOrPanic(notificationService.Methods, func(method parser.MethodDefinition) bool {
 		return method.Name == "BroadcastNotification"
@@ -112,11 +112,11 @@ type NotificationService interface {
 	t.Equal("message", broadcastNotification.Parameters[0].Name)
 	t.Equal("string", broadcastNotification.Parameters[0].Type)
 
-	t.Len(broadcastNotification.Returns, 2)
-	t.Equal("recipients", broadcastNotification.Returns[0].Name)
-	t.Equal("int", broadcastNotification.Returns[0].Type)
-	t.Equal("err", broadcastNotification.Returns[1].Name)
-	t.Equal("error", broadcastNotification.Returns[1].Type)
+	t.Len(broadcastNotification.Results, 2)
+	t.Equal("recipients", broadcastNotification.Results[0].Name)
+	t.Equal("int", broadcastNotification.Results[0].Type)
+	t.Equal("err", broadcastNotification.Results[1].Name)
+	t.Equal("error", broadcastNotification.Results[1].Type)
 }
 
 // TODO: what about empty interfaces? Return a warning?

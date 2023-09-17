@@ -50,16 +50,15 @@ type IncludeInvocationDetails struct {
 }
 
 func Include[P0 string | kelpie.Matcher[string]](name P0) IncludeInvocationDetails {
-    var p0 kelpie.Matcher[string]
+	result := IncludeInvocationDetails{}
+
     if matcher, ok := any(name).(kelpie.Matcher[string]); ok {
-        p0 = matcher
+        result.name = matcher
     } else {
-        p0 = kelpie.ExactMatch(any(name).(string))
+        result.name = kelpie.ExactMatch(any(name).(string))
     }
 
-    return IncludeInvocationDetails{
-        name: p0,
-    }
+    return result
 }
 
 func (a IncludeInvocationDetails) Return(r0 bool) Expectation {
