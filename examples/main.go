@@ -3,10 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"go/ast"
-	"unicode"
-
-	"golang.org/x/tools/go/packages"
 
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/mocks/maths"
@@ -71,27 +67,6 @@ func main() {
 
 	callbackArgResult2, _ := m.ParseInt("321")
 	fmt.Printf("Callback result 2\n: %d", callbackArgResult2)
-
-	// TODO: play with a generic interface
-
-	config := &packages.Config{
-		Mode: packages.NeedSyntax,
-		Dir:  "/home/adam/github.com/adamconnelly/go-better-mocks",
-	}
-	pkgs, _ := packages.Load(config, "adamconnelly/go-better-mocks/idea1/main")
-	pkg := pkgs[0]
-
-	for _, s := range pkg.Syntax {
-		for n, o := range s.Scope.Objects {
-			if o.Kind == ast.Typ {
-				// check if type is exported(only need for non-local types)
-				if unicode.IsUpper([]rune(n)[0]) {
-					// note that reflect.ValueOf(*new(%s)) won't work with interfaces
-					fmt.Printf("ProcessType(new(package_name.%s)),\n", n)
-				}
-			}
-		}
-	}
 
 	mock.Setup(maths.Add(kelpie.Any[int](), kelpie.Any[int]()).Return(0))
 
