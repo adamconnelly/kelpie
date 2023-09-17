@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/adamconnelly/kelpie"
-	"github.com/adamconnelly/kelpie/mocks/emailservice"
-	"github.com/adamconnelly/kelpie/mocks/maths"
+	"github.com/adamconnelly/kelpie/examples/mocks/emailservice"
+	"github.com/adamconnelly/kelpie/examples/mocks/maths"
 )
 
 type Maths interface {
