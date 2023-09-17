@@ -6,26 +6,22 @@ type Mock struct {
 	expectations []Expectation
 }
 
-func (m *Mock) Reset() {
-	m.expectations = nil
-}
-
 func (m *Mock) Add(a, b int) int {
 	var result int
 
 	for _, expectation := range m.expectations {
 		if expectation.method == "Add" {
-			info := expectation.info.(AddMethodCallBegin)
+			info := expectation.invocationDetails.(AddInvocationDetails)
 			if info.a.IsMatch(a) && info.b.IsMatch(b) {
-				if info.callback != nil {
-					return info.callback(a, b)
+				if info.observe != nil {
+					return info.observe(a, b)
 				}
 
 				if info.panicArg != nil {
 					panic(info.panicArg)
 				}
 
-				return info.result
+				return info.result0
 			}
 		}
 	}
@@ -39,7 +35,7 @@ func (m *Mock) ParseInt(input string) (int, error) {
 
 	for _, expectation := range m.expectations {
 		if expectation.method == "ParseInt" {
-			info := expectation.info.(ParseIntMethodCallBegin)
+			info := expectation.invocationDetails.(ParseIntInvocationDetails)
 			if info.input.IsMatch(input) {
 				return info.return0, info.return1
 			}
@@ -51,23 +47,27 @@ func (m *Mock) ParseInt(input string) (int, error) {
 
 // TODO: come up with a better name!
 type Expectation struct {
-	method string
-	info   interface{}
+	method            string
+	invocationDetails interface{}
+}
+
+func (m *Mock) Reset() {
+	m.expectations = nil
 }
 
 func (m *Mock) Setup(expectation Expectation) {
 	m.expectations = append([]Expectation{expectation}, m.expectations...)
 }
 
-type AddMethodCallBegin struct {
+type AddInvocationDetails struct {
 	a        kelpie.Matcher[int]
 	b        kelpie.Matcher[int]
-	result   int
+	result0  int
 	panicArg any
-	callback func(a, b int) int
+	observe  func(a, b int) int
 }
 
-func Add[A1 int | kelpie.Matcher[int], A2 int | kelpie.Matcher[int]](a A1, b A2) AddMethodCallBegin {
+func Add[A1 int | kelpie.Matcher[int], A2 int | kelpie.Matcher[int]](a A1, b A2) AddInvocationDetails {
 	var a1 kelpie.Matcher[int]
 	var a2 kelpie.Matcher[int]
 
@@ -83,46 +83,46 @@ func Add[A1 int | kelpie.Matcher[int], A2 int | kelpie.Matcher[int]](a A1, b A2)
 		a2 = kelpie.ExactMatch(any(b).(int))
 	}
 
-	return AddMethodCallBegin{
+	return AddInvocationDetails{
 		a: a1,
 		b: a2,
 	}
 }
 
-func (a AddMethodCallBegin) Return(result int) Expectation {
-	a.result = result
+func (a AddInvocationDetails) Return(result int) Expectation {
+	a.result0 = result
 
 	return Expectation{
-		method: "Add",
-		info:   a,
+		method:            "Add",
+		invocationDetails: a,
 	}
 }
 
-func (a AddMethodCallBegin) Panic(arg any) Expectation {
+func (a AddInvocationDetails) Panic(arg any) Expectation {
 	a.panicArg = arg
 
 	return Expectation{
-		method: "Add",
-		info:   a,
+		method:            "Add",
+		invocationDetails: a,
 	}
 }
 
-func (a AddMethodCallBegin) When(callback func(a, b int) int) Expectation {
-	a.callback = callback
+func (a AddInvocationDetails) When(callback func(a, b int) int) Expectation {
+	a.observe = callback
 
 	return Expectation{
-		method: "Add",
-		info:   a,
+		method:            "Add",
+		invocationDetails: a,
 	}
 }
 
-type ParseIntMethodCallBegin struct {
+type ParseIntInvocationDetails struct {
 	input   kelpie.Matcher[string]
 	return0 int
 	return1 error
 }
 
-func ParseInt[A1 string | kelpie.Matcher[string]](input A1) ParseIntMethodCallBegin {
+func ParseInt[A1 string | kelpie.Matcher[string]](input A1) ParseIntInvocationDetails {
 	var a1 kelpie.Matcher[string]
 
 	if matcher, ok := any(input).(kelpie.Matcher[string]); ok {
@@ -131,17 +131,17 @@ func ParseInt[A1 string | kelpie.Matcher[string]](input A1) ParseIntMethodCallBe
 		a1 = kelpie.ExactMatch(any(input).(string))
 	}
 
-	return ParseIntMethodCallBegin{
+	return ParseIntInvocationDetails{
 		input: a1,
 	}
 }
 
-func (a ParseIntMethodCallBegin) Return(return0 int, return1 error) Expectation {
+func (a ParseIntInvocationDetails) Return(return0 int, return1 error) Expectation {
 	a.return0 = return0
 	a.return1 = return1
 
 	return Expectation{
-		method: "ParseInt",
-		info:   a,
+		method:            "ParseInt",
+		invocationDetails: a,
 	}
 }
