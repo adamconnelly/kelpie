@@ -19,21 +19,23 @@ type EmailService interface {
 }
 
 func main() {
-	emailServiceMock := emailservice.Mock{}
+	emailServiceMock := emailservice.NewMock()
 	emailServiceMock.Setup(emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).Return(0, errors.New("unknown sender!")))
 	emailServiceMock.Setup(emailservice.Send("panic@thedisco.com", kelpie.Any[string](), "testing").Panic("Oh shit!"))
 	emailServiceMock.Setup(emailservice.Send("adam@email.com", "someone@receiver.com", "Hello world!").Return(100.54, nil))
 
-	sendResult0, sendResultErr0 := emailServiceMock.Send("adam@email.com", "someone@receiver.com", "Hello world!")
+	emailService := emailServiceMock.Instance()
+
+	sendResult0, sendResultErr0 := emailService.Send("adam@email.com", "someone@receiver.com", "Hello world!")
 	fmt.Printf("Send result 0: %f, err: %v\n", sendResult0, sendResultErr0)
 
-	sendResult1, sendResultErr1 := emailServiceMock.Send("a", "b", "c")
+	sendResult1, sendResultErr1 := emailService.Send("a", "b", "c")
 	fmt.Printf("Send result 1: %f, err: %v\n", sendResult1, sendResultErr1)
 
-	emailServiceMock.Send("panic@thedisco.com", "abc", "testing")
+	// emailService.Send("panic@thedisco.com", "abc", "testing")
 
-	mock := maths.Mock{}
-	var m Maths = &mock
+	mock := maths.NewMock()
+	var m Maths = mock.Instance()
 
 	// Basic expectation with exact matching
 	mock.Setup(maths.Add(3, 4).Return(7))

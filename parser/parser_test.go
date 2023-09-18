@@ -14,10 +14,11 @@ import (
 
 type ParserTest struct {
 	suite.Suite
-	interfaceFilter interfacefilter.Mock
+	interfaceFilter *interfacefilter.Mock
 }
 
 func (t *ParserTest) SetupTest() {
+	t.interfaceFilter = interfacefilter.NewMock()
 	t.interfaceFilter.Setup(interfacefilter.Include(kelpie.Any[string]()).Return(true))
 }
 
@@ -34,7 +35,7 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", &t.interfaceFilter)
+	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -58,7 +59,7 @@ type UserService interface {
 	t.interfaceFilter.Setup(interfacefilter.Include("github.com/adamconnelly/kelpie/tests.UserService").Return(false))
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", &t.interfaceFilter)
+	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -78,7 +79,7 @@ type NotificationService interface {
 	t.interfaceFilter.Setup(interfacefilter.Include("github.com/adamconnelly/kelpie/tests.UserService").Return(false))
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", &t.interfaceFilter)
+	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)

@@ -4,14 +4,28 @@ package interfacefilter
 import "github.com/adamconnelly/kelpie"
 
 type Mock struct {
-	expectations []Expectation
+	expectations 	[]Expectation
+	instance		Instance
 }
 
-func (m *Mock) Include(name string) (r0 bool) {
-    for _, expectation := range m.expectations {
+func NewMock() *Mock {
+	mock := Mock{
+		instance: Instance{},
+	}
+	mock.instance.mock = &mock
+
+	return &mock
+}
+
+type Instance struct {
+	mock *Mock
+}
+
+func (m *Instance) Include(name string) (r0 bool) {
+	for _, expectation := range m.mock.expectations {
 		if expectation.method == "Include" {
 			info := expectation.invocationDetails.(IncludeInvocationDetails)
-            if info.name.IsMatch(name) {
+			if info.name.IsMatch(name) {
 				if info.observe != nil {
 					return info.observe(name)
 				}
@@ -20,17 +34,21 @@ func (m *Mock) Include(name string) (r0 bool) {
 					panic(info.panicArg)
 				}
 
-                return info.result0
+				return info.result0
 			}
 		}
 	}
 
-    return
+	return
 }
 
 type Expectation struct {
 	method            string
 	invocationDetails interface{}
+}
+
+func (m *Mock) Instance() *Instance {
+	return &m.instance
 }
 
 func (m *Mock) Reset() {
@@ -43,8 +61,8 @@ func (m *Mock) Setup(expectation Expectation) {
 
 
 type IncludeInvocationDetails struct {
-    name kelpie.Matcher[string]
-    result0 bool
+	name kelpie.Matcher[string]
+	result0 bool
 	panicArg any
 	observe func(name string) (bool)
 }
@@ -52,17 +70,17 @@ type IncludeInvocationDetails struct {
 func Include[P0 string | kelpie.Matcher[string]](name P0) IncludeInvocationDetails {
 	result := IncludeInvocationDetails{}
 
-    if matcher, ok := any(name).(kelpie.Matcher[string]); ok {
-        result.name = matcher
-    } else {
-        result.name = kelpie.ExactMatch(any(name).(string))
-    }
+	if matcher, ok := any(name).(kelpie.Matcher[string]); ok {
+		result.name = matcher
+	} else {
+		result.name = kelpie.ExactMatch(any(name).(string))
+	}
 
-    return result
+	return result
 }
 
 func (a IncludeInvocationDetails) Return(r0 bool) Expectation {
-    a.result0 = r0
+	a.result0 = r0
 
 	return Expectation{
 		method:            "Include",

@@ -4,14 +4,28 @@ package maths
 import "github.com/adamconnelly/kelpie"
 
 type Mock struct {
-	expectations []Expectation
+	expectations 	[]Expectation
+	instance		Instance
 }
 
-func (m *Mock) Add(a int, b int) (r0 int) {
-    for _, expectation := range m.expectations {
+func NewMock() *Mock {
+	mock := Mock{
+		instance: Instance{},
+	}
+	mock.instance.mock = &mock
+
+	return &mock
+}
+
+type Instance struct {
+	mock *Mock
+}
+
+func (m *Instance) Add(a int, b int) (r0 int) {
+	for _, expectation := range m.mock.expectations {
 		if expectation.method == "Add" {
 			info := expectation.invocationDetails.(AddInvocationDetails)
-            if info.a.IsMatch(a) && info.b.IsMatch(b) {
+			if info.a.IsMatch(a) && info.b.IsMatch(b) {
 				if info.observe != nil {
 					return info.observe(a, b)
 				}
@@ -20,19 +34,19 @@ func (m *Mock) Add(a int, b int) (r0 int) {
 					panic(info.panicArg)
 				}
 
-                return info.result0
+				return info.result0
 			}
 		}
 	}
 
-    return
+	return
 }
 
-func (m *Mock) ParseInt(input string) (r0 int, r1 error) {
-    for _, expectation := range m.expectations {
+func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
+	for _, expectation := range m.mock.expectations {
 		if expectation.method == "ParseInt" {
 			info := expectation.invocationDetails.(ParseIntInvocationDetails)
-            if info.input.IsMatch(input) {
+			if info.input.IsMatch(input) {
 				if info.observe != nil {
 					return info.observe(input)
 				}
@@ -41,17 +55,21 @@ func (m *Mock) ParseInt(input string) (r0 int, r1 error) {
 					panic(info.panicArg)
 				}
 
-                return info.result0, info.result1
+				return info.result0, info.result1
 			}
 		}
 	}
 
-    return
+	return
 }
 
 type Expectation struct {
 	method            string
 	invocationDetails interface{}
+}
+
+func (m *Mock) Instance() *Instance {
+	return &m.instance
 }
 
 func (m *Mock) Reset() {
@@ -64,36 +82,33 @@ func (m *Mock) Setup(expectation Expectation) {
 
 
 type AddInvocationDetails struct {
-    a kelpie.Matcher[int]
-    b kelpie.Matcher[int]
-    result0 int
+	a kelpie.Matcher[int]
+	b kelpie.Matcher[int]
+	result0 int
 	panicArg any
 	observe func(a int, b int) (int)
 }
 
 func Add[P0 int | kelpie.Matcher[int], P1 int | kelpie.Matcher[int]](a P0, b P1) AddInvocationDetails {
-    var p0 kelpie.Matcher[int]
-    if matcher, ok := any(a).(kelpie.Matcher[int]); ok {
-        p0 = matcher
-    } else {
-        p0 = kelpie.ExactMatch(any(a).(int))
-    }
+	result := AddInvocationDetails{}
 
-    var p1 kelpie.Matcher[int]
-    if matcher, ok := any(b).(kelpie.Matcher[int]); ok {
-        p1 = matcher
-    } else {
-        p1 = kelpie.ExactMatch(any(b).(int))
-    }
+	if matcher, ok := any(a).(kelpie.Matcher[int]); ok {
+		result.a = matcher
+	} else {
+		result.a = kelpie.ExactMatch(any(a).(int))
+	}
 
-    return AddInvocationDetails{
-        a: p0,
-        b: p1,
-    }
+	if matcher, ok := any(b).(kelpie.Matcher[int]); ok {
+		result.b = matcher
+	} else {
+		result.b = kelpie.ExactMatch(any(b).(int))
+	}
+
+	return result
 }
 
 func (a AddInvocationDetails) Return(r0 int) Expectation {
-    a.result0 = r0
+	a.result0 = r0
 
 	return Expectation{
 		method:            "Add",
@@ -119,29 +134,28 @@ func (a AddInvocationDetails) When(callback func(a int, b int) (int)) Expectatio
 	}
 }
 type ParseIntInvocationDetails struct {
-    input kelpie.Matcher[string]
-    result0 int
-    result1 error
+	input kelpie.Matcher[string]
+	result0 int
+	result1 error
 	panicArg any
 	observe func(input string) (int, error)
 }
 
 func ParseInt[P0 string | kelpie.Matcher[string]](input P0) ParseIntInvocationDetails {
-    var p0 kelpie.Matcher[string]
-    if matcher, ok := any(input).(kelpie.Matcher[string]); ok {
-        p0 = matcher
-    } else {
-        p0 = kelpie.ExactMatch(any(input).(string))
-    }
+	result := ParseIntInvocationDetails{}
 
-    return ParseIntInvocationDetails{
-        input: p0,
-    }
+	if matcher, ok := any(input).(kelpie.Matcher[string]); ok {
+		result.input = matcher
+	} else {
+		result.input = kelpie.ExactMatch(any(input).(string))
+	}
+
+	return result
 }
 
 func (a ParseIntInvocationDetails) Return(r0 int, r1 error) Expectation {
-    a.result0 = r0
-    a.result1 = r1
+	a.result0 = r0
+	a.result1 = r1
 
 	return Expectation{
 		method:            "ParseInt",

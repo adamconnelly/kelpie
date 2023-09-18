@@ -28,16 +28,30 @@ package {{ .PackageName }}
 import "github.com/adamconnelly/kelpie"
 
 type Mock struct {
-	expectations []Expectation
+	expectations 	[]Expectation
+	instance		Instance
+}
+
+func NewMock() *Mock {
+	mock := Mock{
+		instance: Instance{},
+	}
+	mock.instance.mock = &mock
+
+	return &mock
+}
+
+type Instance struct {
+	mock *Mock
 }
 
 {{- range $method := .Methods }}
 
-func (m *Mock) {{ $method.Name }}({{ template "parameterList" $method.Parameters }}) ({{ template "resultList" $method.Results }}) {
-    for _, expectation := range m.expectations {
+func (m *Instance) {{ $method.Name }}({{ template "parameterList" $method.Parameters }}) ({{ template "resultList" $method.Results }}) {
+	for _, expectation := range m.mock.expectations {
 		if expectation.method == "{{ $method.Name }}" {
 			info := expectation.invocationDetails.({{ $method.Name }}InvocationDetails)
-            if {{ range $i, $param := $method.Parameters }}{{ if $i }} && {{ end }}info.{{ $param.Name }}.IsMatch({{ $param.Name }}){{ end }} {
+			if {{ range $i, $param := $method.Parameters }}{{ if $i }} && {{ end }}info.{{ $param.Name }}.IsMatch({{ $param.Name }}){{ end }} {
 				if info.observe != nil {
 					return info.observe({{ range $i, $param := $method.Parameters }}{{ if ne $i 0 }}, {{ end }}{{ $param.Name }}{{ end }})
 				}
@@ -46,18 +60,22 @@ func (m *Mock) {{ $method.Name }}({{ template "parameterList" $method.Parameters
 					panic(info.panicArg)
 				}
 
-                return {{ range $i, $r := $method.Results }}{{ if ne $i 0 }}, {{ end }}info.{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }}{{ end }}
+				return {{ range $i, $r := $method.Results }}{{ if ne $i 0 }}, {{ end }}info.{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }}{{ end }}
 			}
 		}
 	}
 
-    return
+	return
 }
 {{- end }}
 
 type Expectation struct {
 	method            string
 	invocationDetails interface{}
+}
+
+func (m *Mock) Instance() *Instance {
+	return &m.instance
 }
 
 func (m *Mock) Reset() {
@@ -70,12 +88,12 @@ func (m *Mock) Setup(expectation Expectation) {
 
 {{ range $method := .Methods }}
 type {{ $method.Name }}InvocationDetails struct {
-    {{- range $param := $method.Parameters }}
-    {{ $param.Name }} kelpie.Matcher[{{ $param.Type }}]
-    {{- end }}
-    {{- range $i, $r := $method.Results }}
-    {{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }} {{ $r.Type }}
-    {{- end }}
+	{{- range $param := $method.Parameters }}
+	{{ $param.Name }} kelpie.Matcher[{{ $param.Type }}]
+	{{- end }}
+	{{- range $i, $r := $method.Results }}
+	{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }} {{ $r.Type }}
+	{{- end }}
 	panicArg any
 	observe {{ template "observationCallback" $method }}
 }
@@ -83,18 +101,18 @@ type {{ $method.Name }}InvocationDetails struct {
 func {{ $method.Name }}[{{ template "matcherTypeParams" $method.Parameters }}]({{ template "matcherParams" $method.Parameters }}) {{ $method.Name }}InvocationDetails {
 	result := {{ $method.Name }}InvocationDetails{}
 {{ range $i, $param := $method.Parameters }}
-    if matcher, ok := any({{ $param.Name }}).(kelpie.Matcher[{{ $param.Type }}]); ok {
-        result.{{ $param.Name }} = matcher
-    } else {
-        result.{{ $param.Name }} = kelpie.ExactMatch(any({{ $param.Name }}).({{ $param.Type }}))
-    }
+	if matcher, ok := any({{ $param.Name }}).(kelpie.Matcher[{{ $param.Type }}]); ok {
+		result.{{ $param.Name }} = matcher
+	} else {
+		result.{{ $param.Name }} = kelpie.ExactMatch(any({{ $param.Name }}).({{ $param.Type }}))
+	}
 {{ end }}
-    return result
+	return result
 }
 
 func (a {{ $method.Name }}InvocationDetails) Return({{ template "resultList" $method.Results }}) Expectation {
 {{- range $i, $r := $method.Results }}
-    a.{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }} = {{ if $r.Name }}{{ $r.Name }}{{ else }}r{{ $i }}{{ end }}
+	a.{{ if $r.Name }}{{ $r.Name }}{{ else }}result{{ $i }}{{ end }} = {{ if $r.Name }}{{ $r.Name }}{{ else }}r{{ $i }}{{ end }}
 {{- end }}
 
 	return Expectation{
