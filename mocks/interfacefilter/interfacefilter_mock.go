@@ -24,18 +24,18 @@ type Instance struct {
 func (m *Instance) Include(name string) (r0 bool) {
 	expectation := m.mock.Call("Include", name)
 	if expectation != nil {
-		if expectation.ObserveFn != nil {
-			observe := expectation.ObserveFn.(func(name string) (bool))
+		if expectation.ObserveFn() != nil {
+			observe := expectation.ObserveFn().(func(name string) (bool))
 			return observe(name)
 		}
 
-		if expectation.PanicArg != nil {
-			panic(expectation.PanicArg)
+		if expectation.PanicArg() != nil {
+			panic(expectation.PanicArg())
 		}
 
 		
-		if expectation.Returns[0] != nil {
-			r0 = expectation.Returns[0].(bool)
+		if expectation.Returns()[0] != nil {
+			r0 = expectation.Returns()[0].(bool)
 		}
 		
 	}
@@ -49,41 +49,37 @@ func (m *Mock) Instance() *Instance {
 
 
 type IncludeInvocationDetails struct {
-	name kelpie.Matcher[string]
+	kelpie.E
 }
 
-func Include[P0 string | kelpie.Matcher[string]](name P0) IncludeInvocationDetails {
-	result := IncludeInvocationDetails{}
+func Include[P0 string | kelpie.Matcher[string]](name P0) *IncludeInvocationDetails {
+	result := IncludeInvocationDetails{
+		E: kelpie.E{
+			Method: "Include",
+			Args: make([]kelpie.ArgumentMatcher, 1),
+		},
+	}
 
 	if matcher, ok := any(name).(kelpie.Matcher[string]); ok {
-		result.name = matcher
+		result.Args[0] = matcher
 	} else {
-		result.name = kelpie.ExactMatch(any(name).(string))
+		result.Args[0] = kelpie.ExactMatch(any(name).(string))
 	}
 
-	return result
+	return &result
 }
 
-func (a IncludeInvocationDetails) Return(r0 bool) *kelpie.Expectation {
-	return &kelpie.Expectation{
-		MethodName:       "Include",
-		ArgumentMatchers: []kelpie.ArgumentMatcher{a.name},
-		Returns:          []any{r0},
-	}
+func (a *IncludeInvocationDetails) Return(r0 bool) kelpie.Expectation {
+	a.E.Ret = []any{r0}
+	return a
 }
 
-func (a IncludeInvocationDetails) Panic(arg any) *kelpie.Expectation {
-	return &kelpie.Expectation{
-		MethodName:       "Include",
-		ArgumentMatchers: []kelpie.ArgumentMatcher{a.name},
-		PanicArg:         arg,
-	}
+func (a *IncludeInvocationDetails) Panic(arg any) kelpie.Expectation {
+	a.E.Panic = arg
+	return a
 }
 
-func (a IncludeInvocationDetails) When(observe func(name string) (bool)) *kelpie.Expectation {
-	return &kelpie.Expectation{
-		MethodName:       "Include",
-		ArgumentMatchers: []kelpie.ArgumentMatcher{a.name},
-		ObserveFn:        observe,
-	}
+func (a *IncludeInvocationDetails) When(observe func(name string) (bool)) kelpie.Expectation {
+	a.E.Observe = observe
+	return a
 }

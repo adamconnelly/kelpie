@@ -86,12 +86,26 @@ func main() {
 	fmt.Printf("Callback result: %d\n", callbackArgResult1)
 
 	callbackArgResult2, _ := m.ParseInt("321")
-	fmt.Printf("Callback result 2\n: %d", callbackArgResult2)
+	fmt.Printf("Callback result 2: %d\n", callbackArgResult2)
 
 	mock.Setup(maths.Add(kelpie.Any[int](), kelpie.Any[int]()).Return(0))
+
+	m.Add(10, 20)
+
+	// Returns a bool
+	wasCalled := mock.Called(maths.Add(10, kelpie.Any[int]()))
+	fmt.Printf("Add was called: %t\n", wasCalled)
+
+	wasCalled = mock.Called(maths.Add(666, 777))
+	fmt.Printf("Add was called: %t\n", wasCalled)
 
 	// Mocking a PANIC!!!
 	mock.Setup(maths.Add(7, 9).Panic("OMG!!!"))
 
 	m.Add(7, 9)
+
+	// // Panics if not called
+	// mock.EnsureCalled(maths.Add(7, kelpie.Any[int]()))
+
+	// TODO: Times
 }

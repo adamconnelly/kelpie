@@ -28,6 +28,21 @@ func main() {
 		fmt.Printf("Could not parse file: %v", err)
 		return
 	}
+	// file, err := os.Open("../examples/main.go")
+	// if err != nil {
+	// 	fmt.Printf("Could not open file for parsing: %v", err)
+	// 	return
+	// }
+
+	// filter := parser.IncludingInterfaceFilter{
+	// 	InterfacesToInclude: []string{"github.com/adamconnelly/kelpie/examples/main.EmailService", "github.com/adamconnelly/kelpie/examples/main.Maths"},
+	// }
+
+	// mockedInterfaces, err := parser.Parse(file, "github.com/adamconnelly/kelpie/examples/main", &filter)
+	// if err != nil {
+	// 	fmt.Printf("Could not parse file: %v", err)
+	// 	return
+	// }
 
 	template := template.Must(template.New("mock").Parse(mockTemplate))
 
