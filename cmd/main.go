@@ -13,17 +13,17 @@ import (
 var mockTemplate string
 
 func main() {
-	file, err := os.Open("../examples/main.go")
+	file, err := os.Open("../parser/parser.go")
 	if err != nil {
 		fmt.Printf("Could not open file for parsing: %v", err)
 		return
 	}
 
 	filter := parser.IncludingInterfaceFilter{
-		InterfacesToInclude: []string{"github.com/adamconnelly/kelpie/examples/main.EmailService", "github.com/adamconnelly/kelpie/examples/main.Maths"},
+		InterfacesToInclude: []string{"github.com/adamconnelly/kelpie/parser.InterfaceFilter"},
 	}
 
-	mockedInterfaces, err := parser.Parse(file, "github.com/adamconnelly/kelpie/examples/main", &filter)
+	mockedInterfaces, err := parser.Parse(file, "github.com/adamconnelly/kelpie/parser", &filter)
 	if err != nil {
 		fmt.Printf("Could not parse file: %v", err)
 		return

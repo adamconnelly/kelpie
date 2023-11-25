@@ -4,8 +4,8 @@ package maths
 import "github.com/adamconnelly/kelpie"
 
 type Mock struct {
-	expectations 	[]Expectation
-	instance		Instance
+	kelpie.Mock
+	instance Instance
 }
 
 func NewMock() *Mock {
@@ -22,71 +22,61 @@ type Instance struct {
 }
 
 func (m *Instance) Add(a int, b int) (r0 int) {
-	for _, expectation := range m.mock.expectations {
-		if expectation.method == "Add" {
-			info := expectation.invocationDetails.(AddInvocationDetails)
-			if info.a.IsMatch(a) && info.b.IsMatch(b) {
-				if info.observe != nil {
-					return info.observe(a, b)
-				}
-
-				if info.panicArg != nil {
-					panic(info.panicArg)
-				}
-
-				return info.result0
-			}
+	expectation := m.mock.Call("Add", a, b)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(a int, b int) (int))
+			return observe(a, b)
 		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(int)
+		}
+		
 	}
 
 	return
 }
 
 func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
-	for _, expectation := range m.mock.expectations {
-		if expectation.method == "ParseInt" {
-			info := expectation.invocationDetails.(ParseIntInvocationDetails)
-			if info.input.IsMatch(input) {
-				if info.observe != nil {
-					return info.observe(input)
-				}
-
-				if info.panicArg != nil {
-					panic(info.panicArg)
-				}
-
-				return info.result0, info.result1
-			}
+	expectation := m.mock.Call("ParseInt", input)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(input string) (int, error))
+			return observe(input)
 		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(int)
+		}
+		
+		if expectation.Returns[1] != nil {
+			r1 = expectation.Returns[1].(error)
+		}
+		
 	}
 
 	return
-}
-
-type Expectation struct {
-	method            string
-	invocationDetails interface{}
 }
 
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
 
-func (m *Mock) Reset() {
-	m.expectations = nil
-}
-
-func (m *Mock) Setup(expectation Expectation) {
-	m.expectations = append([]Expectation{expectation}, m.expectations...)
-}
-
 
 type AddInvocationDetails struct {
 	a kelpie.Matcher[int]
 	b kelpie.Matcher[int]
-	result0 int
-	panicArg any
-	observe func(a int, b int) (int)
 }
 
 func Add[P0 int | kelpie.Matcher[int], P1 int | kelpie.Matcher[int]](a P0, b P1) AddInvocationDetails {
@@ -107,38 +97,31 @@ func Add[P0 int | kelpie.Matcher[int], P1 int | kelpie.Matcher[int]](a P0, b P1)
 	return result
 }
 
-func (a AddInvocationDetails) Return(r0 int) Expectation {
-	a.result0 = r0
-
-	return Expectation{
-		method:            "Add",
-		invocationDetails: a,
+func (a AddInvocationDetails) Return(r0 int) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Add",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.a, a.b },
+		Returns:          []any{ r0 },
 	}
 }
 
-func (a AddInvocationDetails) Panic(arg any) Expectation {
-	a.panicArg = arg
-
-	return Expectation{
-		method:            "Add",
-		invocationDetails: a,
+func (a AddInvocationDetails) Panic(arg any) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Add",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.a, a.b },
+		PanicArg:         arg,
 	}
 }
 
-func (a AddInvocationDetails) When(callback func(a int, b int) (int)) Expectation {
-	a.observe = callback
-
-	return Expectation{
-		method:            "Add",
-		invocationDetails: a,
+func (a AddInvocationDetails) When(observe func(a int, b int) (int)) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Add",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.a, a.b },
+		ObserveFn:        observe,
 	}
 }
 type ParseIntInvocationDetails struct {
 	input kelpie.Matcher[string]
-	result0 int
-	result1 error
-	panicArg any
-	observe func(input string) (int, error)
 }
 
 func ParseInt[P0 string | kelpie.Matcher[string]](input P0) ParseIntInvocationDetails {
@@ -153,30 +136,26 @@ func ParseInt[P0 string | kelpie.Matcher[string]](input P0) ParseIntInvocationDe
 	return result
 }
 
-func (a ParseIntInvocationDetails) Return(r0 int, r1 error) Expectation {
-	a.result0 = r0
-	a.result1 = r1
-
-	return Expectation{
-		method:            "ParseInt",
-		invocationDetails: a,
+func (a ParseIntInvocationDetails) Return(r0 int, r1 error) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "ParseInt",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.input },
+		Returns:          []any{ r0, r1 },
 	}
 }
 
-func (a ParseIntInvocationDetails) Panic(arg any) Expectation {
-	a.panicArg = arg
-
-	return Expectation{
-		method:            "ParseInt",
-		invocationDetails: a,
+func (a ParseIntInvocationDetails) Panic(arg any) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "ParseInt",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.input },
+		PanicArg:         arg,
 	}
 }
 
-func (a ParseIntInvocationDetails) When(callback func(input string) (int, error)) Expectation {
-	a.observe = callback
-
-	return Expectation{
-		method:            "ParseInt",
-		invocationDetails: a,
+func (a ParseIntInvocationDetails) When(observe func(input string) (int, error)) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "ParseInt",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.input },
+		ObserveFn:        observe,
 	}
 }

@@ -4,8 +4,8 @@ package interfacefilter
 import "github.com/adamconnelly/kelpie"
 
 type Mock struct {
-	expectations 	[]Expectation
-	instance		Instance
+	kelpie.Mock
+	instance Instance
 }
 
 func NewMock() *Mock {
@@ -22,49 +22,34 @@ type Instance struct {
 }
 
 func (m *Instance) Include(name string) (r0 bool) {
-	for _, expectation := range m.mock.expectations {
-		if expectation.method == "Include" {
-			info := expectation.invocationDetails.(IncludeInvocationDetails)
-			if info.name.IsMatch(name) {
-				if info.observe != nil {
-					return info.observe(name)
-				}
-
-				if info.panicArg != nil {
-					panic(info.panicArg)
-				}
-
-				return info.result0
-			}
+	expectation := m.mock.Call("Include", name)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(name string) (bool))
+			return observe(name)
 		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(bool)
+		}
+		
 	}
 
 	return
-}
-
-type Expectation struct {
-	method            string
-	invocationDetails interface{}
 }
 
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
 
-func (m *Mock) Reset() {
-	m.expectations = nil
-}
-
-func (m *Mock) Setup(expectation Expectation) {
-	m.expectations = append([]Expectation{expectation}, m.expectations...)
-}
-
 
 type IncludeInvocationDetails struct {
 	name kelpie.Matcher[string]
-	result0 bool
-	panicArg any
-	observe func(name string) (bool)
 }
 
 func Include[P0 string | kelpie.Matcher[string]](name P0) IncludeInvocationDetails {
@@ -79,29 +64,26 @@ func Include[P0 string | kelpie.Matcher[string]](name P0) IncludeInvocationDetai
 	return result
 }
 
-func (a IncludeInvocationDetails) Return(r0 bool) Expectation {
-	a.result0 = r0
-
-	return Expectation{
-		method:            "Include",
-		invocationDetails: a,
+func (a IncludeInvocationDetails) Return(r0 bool) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Include",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{a.name},
+		Returns:          []any{r0},
 	}
 }
 
-func (a IncludeInvocationDetails) Panic(arg any) Expectation {
-	a.panicArg = arg
-
-	return Expectation{
-		method:            "Include",
-		invocationDetails: a,
+func (a IncludeInvocationDetails) Panic(arg any) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Include",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{a.name},
+		PanicArg:         arg,
 	}
 }
 
-func (a IncludeInvocationDetails) When(callback func(name string) (bool)) Expectation {
-	a.observe = callback
-
-	return Expectation{
-		method:            "Include",
-		invocationDetails: a,
+func (a IncludeInvocationDetails) When(observe func(name string) (bool)) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Include",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{a.name},
+		ObserveFn:        observe,
 	}
 }

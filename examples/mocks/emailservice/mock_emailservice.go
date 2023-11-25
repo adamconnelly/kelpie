@@ -4,8 +4,8 @@ package emailservice
 import "github.com/adamconnelly/kelpie"
 
 type Mock struct {
-	expectations 	[]Expectation
-	instance		Instance
+	kelpie.Mock
+	instance Instance
 }
 
 func NewMock() *Mock {
@@ -22,41 +22,33 @@ type Instance struct {
 }
 
 func (m *Instance) Send(sender string, recipient string, body string) (cost float64, err error) {
-	for _, expectation := range m.mock.expectations {
-		if expectation.method == "Send" {
-			info := expectation.invocationDetails.(SendInvocationDetails)
-			if info.sender.IsMatch(sender) && info.recipient.IsMatch(recipient) && info.body.IsMatch(body) {
-				if info.observe != nil {
-					return info.observe(sender, recipient, body)
-				}
-
-				if info.panicArg != nil {
-					panic(info.panicArg)
-				}
-
-				return info.cost, info.err
-			}
+	expectation := m.mock.Call("Send", sender, recipient, body)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(sender string, recipient string, body string) (float64, error))
+			return observe(sender, recipient, body)
 		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		
+		if expectation.Returns[0] != nil {
+			cost = expectation.Returns[0].(float64)
+		}
+		
+		if expectation.Returns[1] != nil {
+			err = expectation.Returns[1].(error)
+		}
+		
 	}
 
 	return
 }
 
-type Expectation struct {
-	method            string
-	invocationDetails interface{}
-}
-
 func (m *Mock) Instance() *Instance {
 	return &m.instance
-}
-
-func (m *Mock) Reset() {
-	m.expectations = nil
-}
-
-func (m *Mock) Setup(expectation Expectation) {
-	m.expectations = append([]Expectation{expectation}, m.expectations...)
 }
 
 
@@ -64,10 +56,6 @@ type SendInvocationDetails struct {
 	sender kelpie.Matcher[string]
 	recipient kelpie.Matcher[string]
 	body kelpie.Matcher[string]
-	cost float64
-	err error
-	panicArg any
-	observe func(sender string, recipient string, body string) (float64, error)
 }
 
 func Send[P0 string | kelpie.Matcher[string], P1 string | kelpie.Matcher[string], P2 string | kelpie.Matcher[string]](sender P0, recipient P1, body P2) SendInvocationDetails {
@@ -94,30 +82,26 @@ func Send[P0 string | kelpie.Matcher[string], P1 string | kelpie.Matcher[string]
 	return result
 }
 
-func (a SendInvocationDetails) Return(cost float64, err error) Expectation {
-	a.cost = cost
-	a.err = err
-
-	return Expectation{
-		method:            "Send",
-		invocationDetails: a,
+func (a SendInvocationDetails) Return(cost float64, err error) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Send",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.sender, a.recipient, a.body },
+		Returns:          []any{ cost, err },
 	}
 }
 
-func (a SendInvocationDetails) Panic(arg any) Expectation {
-	a.panicArg = arg
-
-	return Expectation{
-		method:            "Send",
-		invocationDetails: a,
+func (a SendInvocationDetails) Panic(arg any) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Send",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.sender, a.recipient, a.body },
+		PanicArg:         arg,
 	}
 }
 
-func (a SendInvocationDetails) When(callback func(sender string, recipient string, body string) (float64, error)) Expectation {
-	a.observe = callback
-
-	return Expectation{
-		method:            "Send",
-		invocationDetails: a,
+func (a SendInvocationDetails) When(observe func(sender string, recipient string, body string) (float64, error)) *kelpie.Expectation {
+	return &kelpie.Expectation{
+		MethodName:       "Send",
+		ArgumentMatchers: []kelpie.ArgumentMatcher{ a.sender, a.recipient, a.body },
+		ObserveFn:        observe,
 	}
 }

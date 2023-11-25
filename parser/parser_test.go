@@ -12,17 +12,17 @@ import (
 	"github.com/adamconnelly/kelpie/slices"
 )
 
-type ParserTest struct {
+type ParserTests struct {
 	suite.Suite
 	interfaceFilter *interfacefilter.Mock
 }
 
-func (t *ParserTest) SetupTest() {
+func (t *ParserTests) SetupTest() {
 	t.interfaceFilter = interfacefilter.NewMock()
 	t.interfaceFilter.Setup(interfacefilter.Include(kelpie.Any[string]()).Return(true))
 }
 
-func (t *ParserTest) Test_Parse_ReturnsAllInterfaces() {
+func (t *ParserTests) Test_Parse_ReturnsAllInterfaces() {
 	// Arrange
 	input := `package test
 
@@ -44,7 +44,7 @@ type UserService interface {
 	t.Equal("UserService", result[1].Name)
 }
 
-func (t *ParserTest) Test_Parse_IgnoresInterfacesThatAreNotIncluded() {
+func (t *ParserTests) Test_Parse_IgnoresInterfacesThatAreNotIncluded() {
 	// Arrange
 	input := `package test
 
@@ -67,7 +67,7 @@ type UserService interface {
 	t.Equal("NotificationService", result[0].Name)
 }
 
-func (t *ParserTest) Test_Parse_PopulatesInterfaceDetails() {
+func (t *ParserTests) Test_Parse_PopulatesInterfaceDetails() {
 	// Arrange
 	input := `package test
 
@@ -123,5 +123,5 @@ type NotificationService interface {
 // TODO: what about empty interfaces? Return a warning?
 
 func TestParser(t *testing.T) {
-	suite.Run(t, new(ParserTest))
+	suite.Run(t, new(ParserTests))
 }
