@@ -115,13 +115,13 @@ You can add custom argument matching functionality using `kelpie.Match[T](isMatc
 
 ```go
 emailServiceMock.Setup(
-		emailservice.Send(
-			kelpie.Match(func(sender string) bool {
-				return strings.HasSuffix(sender, "@discounted-sender.com")
-			}),
-			"someone@receiver.com",
-			"Hello world!").
-			Return(50, nil))
+	emailservice.Send(
+		kelpie.Match(func(sender string) bool {
+			return strings.HasSuffix(sender, "@discounted-sender.com")
+		}),
+		"someone@receiver.com",
+		"Hello world!").
+		Return(50, nil))
 ```
 
 ### Setting Behaviour
