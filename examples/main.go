@@ -9,11 +9,13 @@ import (
 	"github.com/adamconnelly/kelpie/examples/mocks/maths"
 )
 
+//go:generate go run ../cmd generate --source-file main.go --package github.com/adamconnelly/kelpie/examples --interfaces Maths
 type Maths interface {
 	Add(a, b int) int
 	ParseInt(input string) (int, error)
 }
 
+//go:generate go run ../cmd generate --source-file main.go --package github.com/adamconnelly/kelpie/examples --interfaces EmailService
 type EmailService interface {
 	Send(sender, recipient, body string) (cost float64, err error)
 }

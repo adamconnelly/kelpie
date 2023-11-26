@@ -2,64 +2,77 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"github.com/adamconnelly/kelpie/parser"
+	"github.com/adamconnelly/kelpie/slices"
+	"github.com/alecthomas/kong"
 )
 
 //go:embed "mock.go.tmpl"
 var mockTemplate string
 
-func main() {
-	file, err := os.Open("../parser/parser.go")
+type GenerateCmd struct {
+	SourceFile string `short:"s" required:"" help:"The Go source file containing the interface to mock."`
+
+	// TODO: maybe we don't need the package name?
+	Package    string   `short:"p" required:"" help:"The package containing the interface to mock."`
+	Interfaces []string `short:"i" required:"" help:"The names of the interfaces to mock."`
+	OutputDir  string   `short:"o" required:"" default:"mocks" help:"The directory to write the mock out to."`
+}
+
+func (g *GenerateCmd) Run() error {
+	file, err := os.Open(g.SourceFile)
 	if err != nil {
-		fmt.Printf("Could not open file for parsing: %v", err)
-		return
+		// return errors.Wrap(err, "could not open file for parsing")
+		return errors.New("could not open file for parsing")
 	}
 
 	filter := parser.IncludingInterfaceFilter{
-		InterfacesToInclude: []string{"github.com/adamconnelly/kelpie/parser.InterfaceFilter"},
+		InterfacesToInclude: slices.Map(
+			g.Interfaces,
+			func(i string) string { return fmt.Sprintf("%s.%s", g.Package, i) }),
 	}
 
-	mockedInterfaces, err := parser.Parse(file, "github.com/adamconnelly/kelpie/parser", &filter)
+	mockedInterfaces, err := parser.Parse(file, g.Package, &filter)
 	if err != nil {
-		fmt.Printf("Could not parse file: %v", err)
-		return
+		// return errors.Wrap(err, "could not parse file")
+		return errors.New("could not parse file")
 	}
-	// file, err := os.Open("../examples/main.go")
-	// if err != nil {
-	// 	fmt.Printf("Could not open file for parsing: %v", err)
-	// 	return
-	// }
-
-	// filter := parser.IncludingInterfaceFilter{
-	// 	InterfacesToInclude: []string{"github.com/adamconnelly/kelpie/examples/main.EmailService", "github.com/adamconnelly/kelpie/examples/main.Maths"},
-	// }
-
-	// mockedInterfaces, err := parser.Parse(file, "github.com/adamconnelly/kelpie/examples/main", &filter)
-	// if err != nil {
-	// 	fmt.Printf("Could not parse file: %v", err)
-	// 	return
-	// }
 
 	template := template.Must(template.New("mock").Parse(mockTemplate))
 
 	for _, i := range mockedInterfaces {
-		if _, err := os.Stat(fmt.Sprintf("out/%s", i.PackageName)); os.IsNotExist(err) {
-			os.Mkdir(fmt.Sprintf("out/%s", i.PackageName), 0700)
+		outputDirectoryName := filepath.Join(g.OutputDir, i.PackageName)
+		if _, err := os.Stat(outputDirectoryName); os.IsNotExist(err) {
+			os.MkdirAll(outputDirectoryName, 0700)
 		}
-		file, err := os.Create(fmt.Sprintf("out/%s/%s.go", i.PackageName, i.PackageName))
+		file, err := os.Create(filepath.Join(outputDirectoryName, fmt.Sprintf("%s.go", i.PackageName)))
 		if err != nil {
-			fmt.Printf("Could not generate file: %v", err)
-			return
+			// return errors.Wrap(err, "could not open output file")
+			return errors.New("could not open output file")
 		}
 		defer file.Close()
 
 		if err := template.Execute(file, i); err != nil {
-			fmt.Printf("OH NO!!! %v\n", err)
-			return
+			// return errors.Wrap(err, "could not generate mock")
+			return errors.New("could not generate mock")
 		}
 	}
+
+	return nil
+}
+
+var cli struct {
+	Generate GenerateCmd `cmd:"" help:"Generate a mock."`
+}
+
+func main() {
+	ctx := kong.Parse(&cli, kong.Name("kelpie"), kong.Description("A magical tool for generating Go mocks!"))
+	err := ctx.Run()
+	ctx.FatalIfErrorf(err)
 }

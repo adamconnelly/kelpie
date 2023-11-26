@@ -20,3 +20,14 @@ func Contains[T any](slice []T, matches func(item T) bool) bool {
 
 	return false
 }
+
+// Map takes a source slice, and converts the elements to a destination type using the supplied map function.
+func Map[TSource any, TDest any](slice []TSource, mapFn func(item TSource) TDest) []TDest {
+	result := make([]TDest, len(slice))
+
+	for i := range slice {
+		result[i] = mapFn(slice[i])
+	}
+
+	return result
+}

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/adamconnelly/kelpie"
-	"github.com/adamconnelly/kelpie/mocks/interfacefilter"
 	"github.com/adamconnelly/kelpie/parser"
+	"github.com/adamconnelly/kelpie/parser/mocks/interfacefilter"
 	"github.com/adamconnelly/kelpie/slices"
 )
 
