@@ -154,11 +154,11 @@ To perform a custom action, use `When()`:
 
 ```go
 emailServiceMock.Setup(
-		emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).
-			When(func(sender, recipient, body string) (float64, error) {
-				// Do something
-				return 0, nil
-			}))
+	emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).
+		When(func(sender, recipient, body string) (float64, error) {
+			// Do something
+			return 0, nil
+		}))
 ```
 
 ## FAQ
