@@ -58,18 +58,18 @@ type Instance struct {
 func (m *Instance) {{ $method.Name }}({{ template "parameterWithTypeList" $method.Parameters }}) ({{ template "resultWithTypeList" $method.Results }}) {
 	expectation := m.mock.Call("{{ $method.Name }}", {{ template "parameterList" $method.Parameters }})
 	if expectation != nil {
-		if expectation.ObserveFn() != nil {
-			observe := expectation.ObserveFn().({{ template "observationCallback" $method }})
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.({{ template "observationCallback" $method }})
 			return observe({{ template "parameterList" $method.Parameters }})
 		}
 
-		if expectation.PanicArg() != nil {
-			panic(expectation.PanicArg())
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
 		}
 
 		{{ range $i, $result := $method.Results }}
-		if expectation.Returns()[{{ $i }}] != nil {
-			{{ if $result.Name }}{{ $result.Name }}{{ else }}r{{ $i }}{{ end }} = expectation.Returns()[{{ $i }}].({{ $result.Type }})
+		if expectation.Returns[{{ $i }}] != nil {
+			{{ if $result.Name }}{{ $result.Name }}{{ else }}r{{ $i }}{{ end }} = expectation.Returns[{{ $i }}].({{ $result.Type }})
 		}
 		{{ end }}
 	}
@@ -83,39 +83,63 @@ func (m *Mock) Instance() *Instance {
 }
 
 {{ range $method := .Methods }}
-type {{ $method.Name }}InvocationDetails struct {
-	kelpie.E
+type {{ $method.Name }}MethodMatcher struct {
+	matcher kelpie.MethodMatcher
 }
 
-func {{ $method.Name }}[{{ template "matcherTypeParams" $method.Parameters }}]({{ template "matcherParams" $method.Parameters }}) *{{ $method.Name }}InvocationDetails {
-	result := {{ $method.Name }}InvocationDetails{
-		E: kelpie.E{
-			Method: "{{ $method.Name }}",
-			Args: make([]kelpie.ArgumentMatcher, {{ len $method.Parameters }}),
+func (m *{{ $method.Name }}MethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
+	return &m.matcher
+}
+
+func {{ $method.Name }}[{{ template "matcherTypeParams" $method.Parameters }}]({{ template "matcherParams" $method.Parameters }}) *{{ $method.Name }}MethodMatcher {
+	result := {{ $method.Name }}MethodMatcher{
+		matcher: kelpie.MethodMatcher{
+			MethodName: "{{ $method.Name }}",
+			ArgumentMatchers: make([]kelpie.ArgumentMatcher, {{ len $method.Parameters }}),
 		},
 	}
 {{ range $i, $param := $method.Parameters }}
 	if matcher, ok := any({{ $param.Name }}).(kelpie.Matcher[{{ $param.Type }}]); ok {
-		result.Args[{{ $i }}] = matcher
+		result.matcher.ArgumentMatchers[{{ $i }}] = matcher
 	} else {
-		result.Args[{{ $i }}] = kelpie.ExactMatch(any({{ $param.Name }}).({{ $param.Type }}))
+		result.matcher.ArgumentMatchers[{{ $i }}] = kelpie.ExactMatch(any({{ $param.Name }}).({{ $param.Type }}))
 	}
 {{ end }}
 	return &result
 }
 
-func (a *{{ $method.Name }}InvocationDetails) Return({{ template "resultWithTypeList" $method.Results }}) kelpie.Expectation {
-	a.E.Ret = []any{ {{- template "resultList" $method.Results -}} }
-	return a
+type {{ $method.Name }}Expectation struct {
+	expectation kelpie.Expectation
 }
 
-func (a *{{ $method.Name }}InvocationDetails) Panic(arg any) kelpie.Expectation {
-	a.E.Panic = arg
-	return a
+func (e *{{ $method.Name }}Expectation) CreateExpectation() *kelpie.Expectation {
+	return &e.expectation
 }
 
-func (a *{{ $method.Name }}InvocationDetails) When(observe {{ template "observationCallback" $method }}) kelpie.Expectation {
-	a.E.Observe = observe
-	return a
+func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Expectation {
+	return &{{ $method.Name }}Expectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			Returns:       []any{ {{- template "resultList" $method.Results -}} },
+		},
+	}
+}
+
+func (a *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Expectation {
+	return &{{ $method.Name }}Expectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+func (a *{{ $method.Name }}MethodMatcher) When(observe {{ template "observationCallback" $method }}) *{{ $method.Name }}Expectation {
+	return &{{ $method.Name }}Expectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			ObserveFn:     observe,
+		},
+	}
 }
 {{- end }}

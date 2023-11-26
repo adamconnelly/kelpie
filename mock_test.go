@@ -16,6 +16,34 @@ type position struct {
 	x, y, z float64
 }
 
+type fakeExpectationCreator struct {
+	expectation *kelpie.Expectation
+}
+
+func (c *fakeExpectationCreator) CreateExpectation() *kelpie.Expectation {
+	return c.expectation
+}
+
+func wrapExpectation(expectation *kelpie.Expectation) *fakeExpectationCreator {
+	return &fakeExpectationCreator{
+		expectation: expectation,
+	}
+}
+
+type fakeMethodMatcherCreator struct {
+	methodMatcher *kelpie.MethodMatcher
+}
+
+func (c *fakeMethodMatcherCreator) CreateMethodMatcher() *kelpie.MethodMatcher {
+	return c.methodMatcher
+}
+
+func wrapMethodMatcher(matcher *kelpie.MethodMatcher) *fakeMethodMatcherCreator {
+	return &fakeMethodMatcherCreator{
+		methodMatcher: matcher,
+	}
+}
+
 func (t *MockTests) TestCall_RecordsMethodCalls() {
 	// Arrange
 	mock := kelpie.Mock{}
@@ -37,84 +65,100 @@ func (t *MockTests) TestCall_RecordsMethodCalls() {
 func (t *MockTests) TestCall_ReturnsMatchingExpectation() {
 	// Arrange
 	mock := kelpie.Mock{}
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](-20)},
-		Ret:    []any{errors.New("nope")},
-	})
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](-20)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
 
 	// Act
 	expectation := mock.Call("IncreaseVelocity", -20)
 
 	// Assert
 	t.NotNil(expectation)
-	t.EqualError(expectation.Returns()[0].(error), "nope")
+	t.EqualError(expectation.Returns[0].(error), "nope")
 }
 
 func (t *MockTests) TestCall_ReturnsMostRecentlySetupExpectation() {
 	// Arrange
 	mock := kelpie.Mock{}
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](20)},
-		Ret:    []any{errors.New("nope")},
-	})
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](20)},
-		Ret:    []any{nil},
-	})
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](20)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](20)},
+		},
+		Returns: []any{nil},
+	}))
 
 	// Act
 	expectation := mock.Call("IncreaseVelocity", 20)
 
 	// Assert
 	t.NotNil(expectation)
-	t.Len(expectation.Returns(), 1)
-	t.Nil(expectation.Returns()[0])
+	t.Len(expectation.Returns, 1)
+	t.Nil(expectation.Returns[0])
 }
 
 func (t *MockTests) TestCall_ReturnsFirstMatchingCall() {
 	// Arrange
 	mock := kelpie.Mock{}
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](-20)},
-		Ret:    []any{errors.New("nope")},
-	})
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](12345)},
-		Ret:    []any{nil},
-	})
-	mock.Setup(&kelpie.E{
-		Method: "ReduceVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](12345)},
-		Ret:    []any{errors.New("nope")},
-	})
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](-40)},
-		Ret:    []any{errors.New("nope")},
-	})
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](-20)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](12345)},
+		},
+		Returns: []any{nil},
+	}))
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "ReduceVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](12345)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](-40)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
 
 	// Act
 	expectation := mock.Call("IncreaseVelocity", 12345)
 
 	// Assert
 	t.NotNil(expectation)
-	t.Len(expectation.Returns(), 1)
-	t.Nil(expectation.Returns()[0])
+	t.Len(expectation.Returns, 1)
+	t.Nil(expectation.Returns[0])
 }
 
 func (t *MockTests) TestCall_PanicsIfParameterCountDoesNotMatch() {
 	// Arrange
 	mock := kelpie.Mock{}
-	mock.Setup(&kelpie.E{
-		Method: "IncreaseVelocity",
-		Args:   []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](123), kelpie.ExactMatch[int](321)},
-		Ret:    []any{errors.New("nope")},
-	})
+	mock.Setup(wrapExpectation(&kelpie.Expectation{
+		MethodMatcher: &kelpie.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []kelpie.ArgumentMatcher{kelpie.ExactMatch[int](123), kelpie.ExactMatch[int](321)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
 
 	// Act / Assert
 	t.PanicsWithValue(
@@ -129,7 +173,7 @@ func (t *MockTests) TestCalled_ReturnsFalseIfNoMethodsHaveBeenCalled() {
 	mock := kelpie.Mock{}
 
 	// Act
-	called := mock.Called(&kelpie.E{})
+	called := mock.Called(wrapMethodMatcher(&kelpie.MethodMatcher{}))
 
 	// Assert
 	t.False(called)
@@ -142,11 +186,12 @@ func (t *MockTests) TestCalled_ReturnsTrueIfMatchingCallIsFound() {
 
 	// Act
 	called := mock.Called(
-		&kelpie.E{
-			Method: "IncreaseVelocity",
-			Args: []kelpie.ArgumentMatcher{
-				kelpie.ExactMatch[int](20),
-			}})
+		wrapMethodMatcher(
+			&kelpie.MethodMatcher{
+				MethodName: "IncreaseVelocity",
+				ArgumentMatchers: []kelpie.ArgumentMatcher{
+					kelpie.ExactMatch[int](20),
+				}}))
 
 	// Assert
 	t.True(called)
@@ -161,11 +206,12 @@ func (t *MockTests) TestCalled_ReturnsFalseIfNoMatchingCallIsFound() {
 
 	// Act
 	called := mock.Called(
-		&kelpie.E{
-			Method: "Explode",
-			Args: []kelpie.ArgumentMatcher{
-				kelpie.ExactMatch[int](20),
-			}})
+		wrapMethodMatcher(
+			&kelpie.MethodMatcher{
+				MethodName: "Explode",
+				ArgumentMatchers: []kelpie.ArgumentMatcher{
+					kelpie.ExactMatch[int](20),
+				}}))
 
 	// Assert
 	t.False(called)
@@ -178,12 +224,13 @@ func (t *MockTests) TestCalled_ReturnsFalseIfNotAllParametersMatch() {
 
 	// Act
 	called := mock.Called(
-		&kelpie.E{
-			Method: "IncreaseVelocity",
-			Args: []kelpie.ArgumentMatcher{
-				kelpie.ExactMatch[int](1),
-				kelpie.ExactMatch[int](30),
-			}})
+		wrapMethodMatcher(
+			&kelpie.MethodMatcher{
+				MethodName: "IncreaseVelocity",
+				ArgumentMatchers: []kelpie.ArgumentMatcher{
+					kelpie.ExactMatch[int](1),
+					kelpie.ExactMatch[int](30),
+				}}))
 
 	// Assert
 	t.False(called)
@@ -200,13 +247,14 @@ func (t *MockTests) TestCalled_PanicsIfArgumentCountDoesNotMatch() {
 		"Argument mismatch when checking call to 'IncreaseVelocity'.\n    Expected: 3\n    Actual: 1\nThis is a bug in Kelpie - please report it!",
 		func() {
 			mock.Called(
-				&kelpie.E{
-					Method: "IncreaseVelocity",
-					Args: []kelpie.ArgumentMatcher{
-						kelpie.ExactMatch[int](20),
-						kelpie.ExactMatch[int](30),
-						kelpie.ExactMatch[int](40),
-					}})
+				wrapMethodMatcher(
+					&kelpie.MethodMatcher{
+						MethodName: "IncreaseVelocity",
+						ArgumentMatchers: []kelpie.ArgumentMatcher{
+							kelpie.ExactMatch[int](20),
+							kelpie.ExactMatch[int](30),
+							kelpie.ExactMatch[int](40),
+						}}))
 		})
 }
 

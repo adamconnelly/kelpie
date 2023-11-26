@@ -34,8 +34,6 @@ func main() {
 	sendResult1, sendResultErr1 := emailService.Send("a", "b", "c")
 	fmt.Printf("Send result 1: %f, err: %v\n", sendResult1, sendResultErr1)
 
-	// emailService.Send("panic@thedisco.com", "abc", "testing")
-
 	mock := maths.NewMock()
 	var m Maths = mock.Instance()
 

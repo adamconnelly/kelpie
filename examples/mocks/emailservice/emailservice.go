@@ -24,22 +24,22 @@ type Instance struct {
 func (m *Instance) Send(sender string, recipient string, body string) (cost float64, err error) {
 	expectation := m.mock.Call("Send", sender, recipient, body)
 	if expectation != nil {
-		if expectation.ObserveFn() != nil {
-			observe := expectation.ObserveFn().(func(sender string, recipient string, body string) (float64, error))
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(sender string, recipient string, body string) (float64, error))
 			return observe(sender, recipient, body)
 		}
 
-		if expectation.PanicArg() != nil {
-			panic(expectation.PanicArg())
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
 		}
 
 		
-		if expectation.Returns()[0] != nil {
-			cost = expectation.Returns()[0].(float64)
+		if expectation.Returns[0] != nil {
+			cost = expectation.Returns[0].(float64)
 		}
 		
-		if expectation.Returns()[1] != nil {
-			err = expectation.Returns()[1].(error)
+		if expectation.Returns[1] != nil {
+			err = expectation.Returns[1].(error)
 		}
 		
 	}
@@ -52,50 +52,74 @@ func (m *Mock) Instance() *Instance {
 }
 
 
-type SendInvocationDetails struct {
-	kelpie.E
+type SendMethodMatcher struct {
+	matcher kelpie.MethodMatcher
 }
 
-func Send[P0 string | kelpie.Matcher[string], P1 string | kelpie.Matcher[string], P2 string | kelpie.Matcher[string]](sender P0, recipient P1, body P2) *SendInvocationDetails {
-	result := SendInvocationDetails{
-		E: kelpie.E{
-			Method: "Send",
-			Args: make([]kelpie.ArgumentMatcher, 3),
+func (m *SendMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
+	return &m.matcher
+}
+
+func Send[P0 string | kelpie.Matcher[string], P1 string | kelpie.Matcher[string], P2 string | kelpie.Matcher[string]](sender P0, recipient P1, body P2) *SendMethodMatcher {
+	result := SendMethodMatcher{
+		matcher: kelpie.MethodMatcher{
+			MethodName: "Send",
+			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 3),
 		},
 	}
 
 	if matcher, ok := any(sender).(kelpie.Matcher[string]); ok {
-		result.Args[0] = matcher
+		result.matcher.ArgumentMatchers[0] = matcher
 	} else {
-		result.Args[0] = kelpie.ExactMatch(any(sender).(string))
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(sender).(string))
 	}
 
 	if matcher, ok := any(recipient).(kelpie.Matcher[string]); ok {
-		result.Args[1] = matcher
+		result.matcher.ArgumentMatchers[1] = matcher
 	} else {
-		result.Args[1] = kelpie.ExactMatch(any(recipient).(string))
+		result.matcher.ArgumentMatchers[1] = kelpie.ExactMatch(any(recipient).(string))
 	}
 
 	if matcher, ok := any(body).(kelpie.Matcher[string]); ok {
-		result.Args[2] = matcher
+		result.matcher.ArgumentMatchers[2] = matcher
 	} else {
-		result.Args[2] = kelpie.ExactMatch(any(body).(string))
+		result.matcher.ArgumentMatchers[2] = kelpie.ExactMatch(any(body).(string))
 	}
 
 	return &result
 }
 
-func (a *SendInvocationDetails) Return(cost float64, err error) kelpie.Expectation {
-	a.E.Ret = []any{cost, err}
-	return a
+type SendExpectation struct {
+	expectation kelpie.Expectation
 }
 
-func (a *SendInvocationDetails) Panic(arg any) kelpie.Expectation {
-	a.E.Panic = arg
-	return a
+func (e *SendExpectation) CreateExpectation() *kelpie.Expectation {
+	return &e.expectation
 }
 
-func (a *SendInvocationDetails) When(observe func(sender string, recipient string, body string) (float64, error)) kelpie.Expectation {
-	a.E.Observe = observe
-	return a
+func (a *SendMethodMatcher) Return(cost float64, err error) *SendExpectation {
+	return &SendExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			Returns:       []any{cost, err},
+		},
+	}
+}
+
+func (a *SendMethodMatcher) Panic(arg any) *SendExpectation {
+	return &SendExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+func (a *SendMethodMatcher) When(observe func(sender string, recipient string, body string) (float64, error)) *SendExpectation {
+	return &SendExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			ObserveFn:     observe,
+		},
+	}
 }

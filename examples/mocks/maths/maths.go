@@ -24,18 +24,18 @@ type Instance struct {
 func (m *Instance) Add(a int, b int) (r0 int) {
 	expectation := m.mock.Call("Add", a, b)
 	if expectation != nil {
-		if expectation.ObserveFn() != nil {
-			observe := expectation.ObserveFn().(func(a int, b int) (int))
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(a int, b int) (int))
 			return observe(a, b)
 		}
 
-		if expectation.PanicArg() != nil {
-			panic(expectation.PanicArg())
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
 		}
 
 		
-		if expectation.Returns()[0] != nil {
-			r0 = expectation.Returns()[0].(int)
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(int)
 		}
 		
 	}
@@ -46,22 +46,22 @@ func (m *Instance) Add(a int, b int) (r0 int) {
 func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
 	expectation := m.mock.Call("ParseInt", input)
 	if expectation != nil {
-		if expectation.ObserveFn() != nil {
-			observe := expectation.ObserveFn().(func(input string) (int, error))
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(input string) (int, error))
 			return observe(input)
 		}
 
-		if expectation.PanicArg() != nil {
-			panic(expectation.PanicArg())
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
 		}
 
 		
-		if expectation.Returns()[0] != nil {
-			r0 = expectation.Returns()[0].(int)
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(int)
 		}
 		
-		if expectation.Returns()[1] != nil {
-			r1 = expectation.Returns()[1].(error)
+		if expectation.Returns[1] != nil {
+			r1 = expectation.Returns[1].(error)
 		}
 		
 	}
@@ -74,79 +74,127 @@ func (m *Mock) Instance() *Instance {
 }
 
 
-type AddInvocationDetails struct {
-	kelpie.E
+type AddMethodMatcher struct {
+	matcher kelpie.MethodMatcher
 }
 
-func Add[P0 int | kelpie.Matcher[int], P1 int | kelpie.Matcher[int]](a P0, b P1) *AddInvocationDetails {
-	result := AddInvocationDetails{
-		E: kelpie.E{
-			Method: "Add",
-			Args: make([]kelpie.ArgumentMatcher, 2),
+func (m *AddMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
+	return &m.matcher
+}
+
+func Add[P0 int | kelpie.Matcher[int], P1 int | kelpie.Matcher[int]](a P0, b P1) *AddMethodMatcher {
+	result := AddMethodMatcher{
+		matcher: kelpie.MethodMatcher{
+			MethodName: "Add",
+			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 2),
 		},
 	}
 
 	if matcher, ok := any(a).(kelpie.Matcher[int]); ok {
-		result.Args[0] = matcher
+		result.matcher.ArgumentMatchers[0] = matcher
 	} else {
-		result.Args[0] = kelpie.ExactMatch(any(a).(int))
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(a).(int))
 	}
 
 	if matcher, ok := any(b).(kelpie.Matcher[int]); ok {
-		result.Args[1] = matcher
+		result.matcher.ArgumentMatchers[1] = matcher
 	} else {
-		result.Args[1] = kelpie.ExactMatch(any(b).(int))
+		result.matcher.ArgumentMatchers[1] = kelpie.ExactMatch(any(b).(int))
 	}
 
 	return &result
 }
 
-func (a *AddInvocationDetails) Return(r0 int) kelpie.Expectation {
-	a.E.Ret = []any{r0}
-	return a
+type AddExpectation struct {
+	expectation kelpie.Expectation
 }
 
-func (a *AddInvocationDetails) Panic(arg any) kelpie.Expectation {
-	a.E.Panic = arg
-	return a
+func (e *AddExpectation) CreateExpectation() *kelpie.Expectation {
+	return &e.expectation
 }
 
-func (a *AddInvocationDetails) When(observe func(a int, b int) (int)) kelpie.Expectation {
-	a.E.Observe = observe
-	return a
-}
-type ParseIntInvocationDetails struct {
-	kelpie.E
+func (a *AddMethodMatcher) Return(r0 int) *AddExpectation {
+	return &AddExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			Returns:       []any{r0},
+		},
+	}
 }
 
-func ParseInt[P0 string | kelpie.Matcher[string]](input P0) *ParseIntInvocationDetails {
-	result := ParseIntInvocationDetails{
-		E: kelpie.E{
-			Method: "ParseInt",
-			Args: make([]kelpie.ArgumentMatcher, 1),
+func (a *AddMethodMatcher) Panic(arg any) *AddExpectation {
+	return &AddExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+func (a *AddMethodMatcher) When(observe func(a int, b int) (int)) *AddExpectation {
+	return &AddExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+type ParseIntMethodMatcher struct {
+	matcher kelpie.MethodMatcher
+}
+
+func (m *ParseIntMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
+	return &m.matcher
+}
+
+func ParseInt[P0 string | kelpie.Matcher[string]](input P0) *ParseIntMethodMatcher {
+	result := ParseIntMethodMatcher{
+		matcher: kelpie.MethodMatcher{
+			MethodName: "ParseInt",
+			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 1),
 		},
 	}
 
 	if matcher, ok := any(input).(kelpie.Matcher[string]); ok {
-		result.Args[0] = matcher
+		result.matcher.ArgumentMatchers[0] = matcher
 	} else {
-		result.Args[0] = kelpie.ExactMatch(any(input).(string))
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(input).(string))
 	}
 
 	return &result
 }
 
-func (a *ParseIntInvocationDetails) Return(r0 int, r1 error) kelpie.Expectation {
-	a.E.Ret = []any{r0, r1}
-	return a
+type ParseIntExpectation struct {
+	expectation kelpie.Expectation
 }
 
-func (a *ParseIntInvocationDetails) Panic(arg any) kelpie.Expectation {
-	a.E.Panic = arg
-	return a
+func (e *ParseIntExpectation) CreateExpectation() *kelpie.Expectation {
+	return &e.expectation
 }
 
-func (a *ParseIntInvocationDetails) When(observe func(input string) (int, error)) kelpie.Expectation {
-	a.E.Observe = observe
-	return a
+func (a *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntExpectation {
+	return &ParseIntExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			Returns:       []any{r0, r1},
+		},
+	}
+}
+
+func (a *ParseIntMethodMatcher) Panic(arg any) *ParseIntExpectation {
+	return &ParseIntExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+func (a *ParseIntMethodMatcher) When(observe func(input string) (int, error)) *ParseIntExpectation {
+	return &ParseIntExpectation{
+		expectation: kelpie.Expectation{
+			MethodMatcher: &a.matcher,
+			ObserveFn:     observe,
+		},
+	}
 }
