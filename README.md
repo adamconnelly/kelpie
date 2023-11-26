@@ -25,8 +25,14 @@ Use the mock:
 
 ```go
 emailServiceMock := emailservice.NewMock()
-emailServiceMock.Setup(emailservice.Send("sender@sender.com", "someone@receiver.com", kelpie.Any[string]()).Return(100.54, nil))
-emailServiceMock.Setup(emailservice.Send("sender@sender.com", "someone@forbidden.com", kelpie.Any[string]()).Return(0, errors.New("that domain is forbidden!")))
+emailServiceMock.Setup(
+	emailservice.Send("sender@sender.com", "someone@receiver.com", kelpie.Any[string]()).
+	Return(100.54, nil)
+)
+emailServiceMock.Setup(
+	emailservice.Send("sender@sender.com", "someone@forbidden.com", kelpie.Any[string]()).
+	Return(0, errors.New("that domain is forbidden!"))
+)
 
 service := emailServiceMock.Instance()
 
@@ -55,7 +61,12 @@ Kelpie always uses the most recent expectation when trying to match a method cal
 
 ```go
 mock := emailservice.NewMock()
-mock.Setup(emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).Return(200, nil))
+
+// Setup an initial behaviour
+mock.Setup(
+	emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).
+	Return(200, nil)
+)
 
 service := mock.Instance()
 
@@ -64,7 +75,10 @@ t.Equal(200, cost)
 t.NoError(err)
 
 // We override the mock, to allow us to test an error condition
-mock.Setup(emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).Return(0, errors.New("no way!")))
+mock.Setup(
+	emailservice.Send(kelpie.Any[string](), kelpie.Any[string](), kelpie.Any[string]()).
+	Return(0, errors.New("no way!"))
+)
 
 cost, err := service.Send("sender@sender.com", "someone@receiver.com", "Hello world")
 t.Equal(0, cost)
@@ -78,7 +92,10 @@ t.ErrorEqual(err, "no way!")
 By default Kelpie uses exact matching, and any parameters in a method call need to exactly match those specified in the setup:
 
 ```go
-emailServiceMock.Setup(emailservice.Send("sender@sender.com", "someone@receiver.com", "Hello world").Return(100.54, nil))
+emailServiceMock.Setup(
+	emailservice.Send("sender@sender.com", "someone@receiver.com", "Hello world").
+	Return(100.54, nil)
+)
 ```
 
 #### Any
@@ -86,7 +103,10 @@ emailServiceMock.Setup(emailservice.Send("sender@sender.com", "someone@receiver.
 You can match against any possible values of a particular parameter using `kelpie.Any[T]()`:
 
 ```go
-emailServiceMock.Setup(emailservice.Send(kelpie.Any[string](), "someone@receiver.com", "Hello world").Return(100.54, nil))
+emailServiceMock.Setup(
+	emailservice.Send(kelpie.Any[string](), "someone@receiver.com", "Hello world").
+	Return(100.54, nil)
+)
 ```
 
 #### Custom Matching
@@ -111,7 +131,10 @@ emailServiceMock.Setup(
 To return a specific value from a method call, use `Return()`:
 
 ```go
-emailServiceMock.Setup(emailservice.Send("sender@sender.com", "someone@receiver.com", "Hello world").Return(100.54, nil))
+emailServiceMock.Setup(
+	emailservice.Send("sender@sender.com", "someone@receiver.com", "Hello world").
+	Return(100.54, nil)
+)
 ```
 
 #### Panic
@@ -119,7 +142,10 @@ emailServiceMock.Setup(emailservice.Send("sender@sender.com", "someone@receiver.
 To panic, use `Panic()`:
 
 ```go
-emailServiceMock.Setup(emailservice.Send("panic@thedisco.com", kelpie.Any[string](), "testing").Panic("Something has gone badly wrong!"))
+emailServiceMock.Setup(
+	emailservice.Send("panic@thedisco.com", kelpie.Any[string](), "testing").
+	Panic("Something has gone badly wrong!")
+)
 ```
 
 #### Custom Action
