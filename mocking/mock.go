@@ -1,6 +1,8 @@
-package kelpie
+package mocking
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type MethodMatcher struct {
 	MethodName       string
