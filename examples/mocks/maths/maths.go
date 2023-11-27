@@ -25,7 +25,7 @@ func (m *Instance) Add(a int, b int) (r0 int) {
 	expectation := m.mock.Call("Add", a, b)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
-			observe := expectation.ObserveFn.(func(a int, b int) (int))
+			observe := expectation.ObserveFn.(func(a int, b int) int)
 			return observe(a, b)
 		}
 
@@ -33,11 +33,9 @@ func (m *Instance) Add(a int, b int) (r0 int) {
 			panic(expectation.PanicArg)
 		}
 
-		
 		if expectation.Returns[0] != nil {
 			r0 = expectation.Returns[0].(int)
 		}
-		
 	}
 
 	return
@@ -55,15 +53,13 @@ func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
 			panic(expectation.PanicArg)
 		}
 
-		
 		if expectation.Returns[0] != nil {
 			r0 = expectation.Returns[0].(int)
 		}
-		
+
 		if expectation.Returns[1] != nil {
 			r1 = expectation.Returns[1].(error)
 		}
-		
 	}
 
 	return
@@ -72,7 +68,6 @@ func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
-
 
 type AddMethodMatcher struct {
 	matcher kelpie.MethodMatcher
@@ -85,7 +80,7 @@ func (m *AddMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
 func Add[P0 int | kelpie.Matcher[int], P1 int | kelpie.Matcher[int]](a P0, b P1) *AddMethodMatcher {
 	result := AddMethodMatcher{
 		matcher: kelpie.MethodMatcher{
-			MethodName: "Add",
+			MethodName:       "Add",
 			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 2),
 		},
 	}
@@ -131,7 +126,7 @@ func (a *AddMethodMatcher) Panic(arg any) *AddExpectation {
 	}
 }
 
-func (a *AddMethodMatcher) When(observe func(a int, b int) (int)) *AddExpectation {
+func (a *AddMethodMatcher) When(observe func(a int, b int) int) *AddExpectation {
 	return &AddExpectation{
 		expectation: kelpie.Expectation{
 			MethodMatcher: &a.matcher,
@@ -139,6 +134,7 @@ func (a *AddMethodMatcher) When(observe func(a int, b int) (int)) *AddExpectatio
 		},
 	}
 }
+
 type ParseIntMethodMatcher struct {
 	matcher kelpie.MethodMatcher
 }
@@ -150,7 +146,7 @@ func (m *ParseIntMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
 func ParseInt[P0 string | kelpie.Matcher[string]](input P0) *ParseIntMethodMatcher {
 	result := ParseIntMethodMatcher{
 		matcher: kelpie.MethodMatcher{
-			MethodName: "ParseInt",
+			MethodName:       "ParseInt",
 			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 1),
 		},
 	}

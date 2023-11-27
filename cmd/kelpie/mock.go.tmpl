@@ -15,11 +15,11 @@
 {{- end -}}
 
 {{- define "resultTypeList" -}}
-{{ range $i, $result := . }}{{ if $i }}, {{ end }}{{ $result.Type }}{{ end }}
+{{ if gt (len .) 1 }}({{ end }}{{ range $i, $result := . }}{{ if $i }}, {{ end }}{{ $result.Type }}{{ end }}{{ if gt (len .) 1 }}){{ end }}
 {{- end -}}
 
 {{- define "observationCallback" -}}
-func({{ template "parameterWithTypeList" .Parameters }}) ({{ template "resultTypeList" .Results }})
+func({{ template "parameterWithTypeList" .Parameters }}) {{ template "resultTypeList" .Results }}
 {{- end -}}
 
 {{- define "matcherTypeParams" -}}
@@ -67,11 +67,12 @@ func (m *Instance) {{ $method.Name }}({{ template "parameterWithTypeList" $metho
 			panic(expectation.PanicArg)
 		}
 
-		{{ range $i, $result := $method.Results }}
+		{{- range $i, $result := $method.Results }}
+
 		if expectation.Returns[{{ $i }}] != nil {
 			{{ if $result.Name }}{{ $result.Name }}{{ else }}r{{ $i }}{{ end }} = expectation.Returns[{{ $i }}].({{ $result.Type }})
 		}
-		{{ end }}
+		{{- end }}
 	}
 
 	return
@@ -82,7 +83,8 @@ func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
 
-{{ range $method := .Methods }}
+{{- range $method := .Methods }}
+
 type {{ $method.Name }}MethodMatcher struct {
 	matcher kelpie.MethodMatcher
 }
@@ -94,7 +96,7 @@ func (m *{{ $method.Name }}MethodMatcher) CreateMethodMatcher() *kelpie.MethodMa
 func {{ $method.Name }}[{{ template "matcherTypeParams" $method.Parameters }}]({{ template "matcherParams" $method.Parameters }}) *{{ $method.Name }}MethodMatcher {
 	result := {{ $method.Name }}MethodMatcher{
 		matcher: kelpie.MethodMatcher{
-			MethodName: "{{ $method.Name }}",
+			MethodName:       "{{ $method.Name }}",
 			ArgumentMatchers: make([]kelpie.ArgumentMatcher, {{ len $method.Parameters }}),
 		},
 	}

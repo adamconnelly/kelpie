@@ -33,15 +33,13 @@ func (m *Instance) Send(sender string, recipient string, body string) (cost floa
 			panic(expectation.PanicArg)
 		}
 
-		
 		if expectation.Returns[0] != nil {
 			cost = expectation.Returns[0].(float64)
 		}
-		
+
 		if expectation.Returns[1] != nil {
 			err = expectation.Returns[1].(error)
 		}
-		
 	}
 
 	return
@@ -50,7 +48,6 @@ func (m *Instance) Send(sender string, recipient string, body string) (cost floa
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
-
 
 type SendMethodMatcher struct {
 	matcher kelpie.MethodMatcher
@@ -63,7 +60,7 @@ func (m *SendMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
 func Send[P0 string | kelpie.Matcher[string], P1 string | kelpie.Matcher[string], P2 string | kelpie.Matcher[string]](sender P0, recipient P1, body P2) *SendMethodMatcher {
 	result := SendMethodMatcher{
 		matcher: kelpie.MethodMatcher{
-			MethodName: "Send",
+			MethodName:       "Send",
 			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 3),
 		},
 	}

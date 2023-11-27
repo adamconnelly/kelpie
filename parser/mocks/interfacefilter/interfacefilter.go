@@ -25,7 +25,7 @@ func (m *Instance) Include(name string) (r0 bool) {
 	expectation := m.mock.Call("Include", name)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
-			observe := expectation.ObserveFn.(func(name string) (bool))
+			observe := expectation.ObserveFn.(func(name string) bool)
 			return observe(name)
 		}
 
@@ -33,11 +33,9 @@ func (m *Instance) Include(name string) (r0 bool) {
 			panic(expectation.PanicArg)
 		}
 
-		
 		if expectation.Returns[0] != nil {
 			r0 = expectation.Returns[0].(bool)
 		}
-		
 	}
 
 	return
@@ -46,7 +44,6 @@ func (m *Instance) Include(name string) (r0 bool) {
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
-
 
 type IncludeMethodMatcher struct {
 	matcher kelpie.MethodMatcher
@@ -59,7 +56,7 @@ func (m *IncludeMethodMatcher) CreateMethodMatcher() *kelpie.MethodMatcher {
 func Include[P0 string | kelpie.Matcher[string]](name P0) *IncludeMethodMatcher {
 	result := IncludeMethodMatcher{
 		matcher: kelpie.MethodMatcher{
-			MethodName: "Include",
+			MethodName:       "Include",
 			ArgumentMatchers: make([]kelpie.ArgumentMatcher, 1),
 		},
 	}
@@ -99,7 +96,7 @@ func (a *IncludeMethodMatcher) Panic(arg any) *IncludeExpectation {
 	}
 }
 
-func (a *IncludeMethodMatcher) When(observe func(name string) (bool)) *IncludeExpectation {
+func (a *IncludeMethodMatcher) When(observe func(name string) bool) *IncludeExpectation {
 	return &IncludeExpectation{
 		expectation: kelpie.Expectation{
 			MethodMatcher: &a.matcher,
