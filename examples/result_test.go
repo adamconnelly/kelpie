@@ -3,6 +3,7 @@ package examples
 import (
 	"testing"
 
+	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/examples/mocks/accountservice"
 	"github.com/stretchr/testify/suite"
 )
@@ -10,6 +11,7 @@ import (
 //go:generate go run ../cmd/kelpie generate --source-file result_test.go --package github.com/adamconnelly/kelpie/examples --interfaces AccountService
 type AccountService interface {
 	SendActivationEmail(emailAddress string) bool
+	DisableAccount(id uint)
 }
 
 type ResultTests struct {
@@ -51,6 +53,21 @@ func (t *ResultTests) Test_CustomAction() {
 
 	// Assert
 	t.Equal("a@b.com", recipientAddress)
+}
+
+func (t *ResultTests) Test_CanMockMethodsWithNoReturnArgs() {
+	// Arrange
+	var accountID uint
+	mock := accountservice.NewMock()
+	mock.Setup(accountservice.DisableAccount(kelpie.Any[uint]()).When(func(id uint) {
+		accountID = id
+	}))
+
+	// Act
+	mock.Instance().DisableAccount(uint(123))
+
+	// Assert
+	t.Equal(uint(123), accountID)
 }
 
 func TestResults(t *testing.T) {

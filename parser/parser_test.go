@@ -120,6 +120,40 @@ type NotificationService interface {
 	t.Equal("error", broadcastNotification.Results[1].Type)
 }
 
+func (t *ParserTests) Test_Parse_SupportsMethodsWithNoResults() {
+	// Arrange
+	input := `package test
+
+type NotificationService interface {
+	Block(recipient string)
+}`
+
+	t.interfaceFilter.Setup(interfacefilter.Include("github.com/adamconnelly/kelpie/tests.UserService").Return(false))
+
+	// Act
+	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Len(result, 1)
+
+	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+		return mock.Name == "NotificationService"
+	})
+	t.Equal("notificationservice", notificationService.PackageName)
+	t.Len(notificationService.Methods, 1)
+
+	block := slices.FirstOrPanic(notificationService.Methods, func(method parser.MethodDefinition) bool {
+		return method.Name == "Block"
+	})
+
+	t.Len(block.Parameters, 1)
+	t.Equal("recipient", block.Parameters[0].Name)
+	t.Equal("string", block.Parameters[0].Type)
+
+	t.Len(block.Results, 0)
+}
+
 // TODO: what about empty interfaces? Return a warning?
 
 func TestParser(t *testing.T) {

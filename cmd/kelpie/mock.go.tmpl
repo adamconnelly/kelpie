@@ -19,7 +19,7 @@
 {{- end -}}
 
 {{- define "observationCallback" -}}
-func({{ template "parameterWithTypeList" .Parameters }}) {{ template "resultTypeList" .Results }}
+func({{ template "parameterWithTypeList" .Parameters }}){{ if .Results }} {{ template "resultTypeList" .Results }}{{ end }}
 {{- end -}}
 
 {{- define "matcherTypeParams" -}}
@@ -58,12 +58,17 @@ type Instance struct {
 
 {{- range $method := .Methods }}
 
-func (m *Instance) {{ $method.Name }}({{ template "parameterWithTypeList" $method.Parameters }}) ({{ template "resultWithTypeList" $method.Results }}) {
+func (m *Instance) {{ $method.Name }}({{ template "parameterWithTypeList" $method.Parameters }}){{ if $method.Results }} ({{ template "resultWithTypeList" $method.Results }}){{ end }} {
 	expectation := m.mock.Call("{{ $method.Name }}", {{ template "parameterList" $method.Parameters }})
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
 			observe := expectation.ObserveFn.({{ template "observationCallback" $method }})
+			{{- if $method.Results }}
 			return observe({{ template "parameterList" $method.Parameters }})
+			{{- else }}
+			observe({{ template "parameterList" $method.Parameters }})
+			return
+			{{- end }}
 		}
 
 		if expectation.PanicArg != nil {
@@ -121,6 +126,8 @@ func (e *{{ $method.Name }}Expectation) CreateExpectation() *mocking.Expectation
 	return &e.expectation
 }
 
+{{- if $method.Results }}
+
 func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Expectation {
 	return &{{ $method.Name }}Expectation{
 		expectation: mocking.Expectation{
@@ -129,6 +136,7 @@ func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList
 		},
 	}
 }
+{{- end }}
 
 func (a *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Expectation {
 	return &{{ $method.Name }}Expectation{

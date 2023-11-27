@@ -44,6 +44,23 @@ func (m *Instance) SendActivationEmail(emailAddress string) (r0 bool) {
 	return
 }
 
+func (m *Instance) DisableAccount(id uint) {
+	expectation := m.mock.Call("DisableAccount", id)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(id uint))
+			observe(id)
+			return
+		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+	}
+
+	return
+}
+
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
@@ -101,6 +118,57 @@ func (a *SendActivationEmailMethodMatcher) Panic(arg any) *SendActivationEmailEx
 
 func (a *SendActivationEmailMethodMatcher) When(observe func(emailAddress string) bool) *SendActivationEmailExpectation {
 	return &SendActivationEmailExpectation{
+		expectation: mocking.Expectation{
+			MethodMatcher: &a.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+type DisableAccountMethodMatcher struct {
+	matcher mocking.MethodMatcher
+}
+
+func (m *DisableAccountMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &m.matcher
+}
+
+func DisableAccount[P0 uint | mocking.Matcher[uint]](id P0) *DisableAccountMethodMatcher {
+	result := DisableAccountMethodMatcher{
+		matcher: mocking.MethodMatcher{
+			MethodName:       "DisableAccount",
+			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
+		},
+	}
+
+	if matcher, ok := any(id).(mocking.Matcher[uint]); ok {
+		result.matcher.ArgumentMatchers[0] = matcher
+	} else {
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(id).(uint))
+	}
+
+	return &result
+}
+
+type DisableAccountExpectation struct {
+	expectation mocking.Expectation
+}
+
+func (e *DisableAccountExpectation) CreateExpectation() *mocking.Expectation {
+	return &e.expectation
+}
+
+func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountExpectation {
+	return &DisableAccountExpectation{
+		expectation: mocking.Expectation{
+			MethodMatcher: &a.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+func (a *DisableAccountMethodMatcher) When(observe func(id uint)) *DisableAccountExpectation {
+	return &DisableAccountExpectation{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,

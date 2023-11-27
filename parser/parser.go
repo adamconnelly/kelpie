@@ -83,18 +83,20 @@ func Parse(reader io.Reader, packageName string, filter InterfaceFilter) ([]Mock
 								}
 							}
 
-							for _, result := range funcType.Results.List {
-								if len(result.Names) > 0 {
-									for _, resultName := range result.Names {
+							if funcType.Results != nil {
+								for _, result := range funcType.Results.List {
+									if len(result.Names) > 0 {
+										for _, resultName := range result.Names {
+											methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+												Name: resultName.Name,
+												Type: result.Type.(*ast.Ident).Name,
+											})
+										}
+									} else {
 										methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-											Name: resultName.Name,
 											Type: result.Type.(*ast.Ident).Name,
 										})
 									}
-								} else {
-									methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-										Type: result.Type.(*ast.Ident).Name,
-									})
 								}
 							}
 
