@@ -54,6 +54,7 @@ func Parse(reader io.Reader, packageName string, filter InterfaceFilter) ([]Mock
 
 	fileSet := token.NewFileSet()
 	// TODO: test error handling
+	// TODO: handle void methods (seems to panic right now)
 	fileNode, _ := parser.ParseFile(fileSet, "", reader, parser.ParseComments)
 	ast.Inspect(fileNode, func(n ast.Node) bool {
 		if t, ok := n.(*ast.TypeSpec); ok {
