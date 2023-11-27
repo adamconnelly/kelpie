@@ -32,7 +32,7 @@ type ResultDefinition struct {
 	Type string
 }
 
-//go:generate go run ../cmd generate --source-file parser.go --package github.com/adamconnelly/kelpie/parser --interfaces InterfaceFilter
+//go:generate go run ../cmd/kelpie generate --source-file parser.go --package github.com/adamconnelly/kelpie/parser --interfaces InterfaceFilter
 type InterfaceFilter interface {
 	// Include indicates that the specified interface should be included in the set of interfaces
 	// to generate.

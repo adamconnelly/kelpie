@@ -9,7 +9,7 @@ Kelpie is the most magical mock generator for Go. Kelpie aims to be easy to use,
 Install Kelpie:
 
 ```shell
-go install github.com/adamconnelly/kelpie
+go install github.com/adamconnelly/kelpie/cmd/kelpie@latest
 ```
 
 Add a `go:generate` marker to the interface you want to mock:
