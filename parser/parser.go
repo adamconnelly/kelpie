@@ -56,11 +56,9 @@ func Parse(reader io.Reader, packageName string, filter InterfaceFilter) ([]Mock
 	// TODO: test error handling
 	fileNode, _ := parser.ParseFile(fileSet, "", reader, parser.ParseComments)
 	ast.Inspect(fileNode, func(n ast.Node) bool {
-		switch t := n.(type) {
-		case *ast.TypeSpec:
+		if t, ok := n.(*ast.TypeSpec); ok {
 			if t.Name.IsExported() {
-				switch typeSpecType := t.Type.(type) {
-				case *ast.InterfaceType:
+				if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
 					if filter.Include(packageName + "." + t.Name.Name) {
 						mockedInterface := MockedInterface{
 							Name:        t.Name.Name,

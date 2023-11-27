@@ -2,15 +2,16 @@ package main
 
 import (
 	_ "embed"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"text/template"
 
+	"github.com/alecthomas/kong"
+	"github.com/pkg/errors"
+
 	"github.com/adamconnelly/kelpie/parser"
 	"github.com/adamconnelly/kelpie/slices"
-	"github.com/alecthomas/kong"
 )
 
 //go:embed "mock.go.tmpl"
@@ -28,8 +29,7 @@ type GenerateCmd struct {
 func (g *GenerateCmd) Run() error {
 	file, err := os.Open(g.SourceFile)
 	if err != nil {
-		// return errors.Wrap(err, "could not open file for parsing")
-		return errors.New("could not open file for parsing")
+		return errors.Wrap(err, "could not open file for parsing")
 	}
 
 	filter := parser.IncludingInterfaceFilter{
@@ -40,27 +40,32 @@ func (g *GenerateCmd) Run() error {
 
 	mockedInterfaces, err := parser.Parse(file, g.Package, &filter)
 	if err != nil {
-		// return errors.Wrap(err, "could not parse file")
-		return errors.New("could not parse file")
+		return errors.Wrap(err, "could not parse file")
 	}
 
 	template := template.Must(template.New("mock").Parse(mockTemplate))
 
 	for _, i := range mockedInterfaces {
-		outputDirectoryName := filepath.Join(g.OutputDir, i.PackageName)
-		if _, err := os.Stat(outputDirectoryName); os.IsNotExist(err) {
-			os.MkdirAll(outputDirectoryName, 0700)
-		}
-		file, err := os.Create(filepath.Join(outputDirectoryName, fmt.Sprintf("%s.go", i.PackageName)))
-		if err != nil {
-			// return errors.Wrap(err, "could not open output file")
-			return errors.New("could not open output file")
-		}
-		defer file.Close()
+		err := func() error {
+			outputDirectoryName := filepath.Join(g.OutputDir, i.PackageName)
+			if _, err := os.Stat(outputDirectoryName); os.IsNotExist(err) {
+				os.MkdirAll(outputDirectoryName, 0700)
+			}
+			file, err := os.Create(filepath.Join(outputDirectoryName, fmt.Sprintf("%s.go", i.PackageName)))
+			if err != nil {
+				return errors.Wrap(err, "could not open output file")
+			}
+			defer file.Close()
 
-		if err := template.Execute(file, i); err != nil {
-			// return errors.Wrap(err, "could not generate mock")
-			return errors.New("could not generate mock")
+			if err := template.Execute(file, i); err != nil {
+				return errors.Wrap(err, "could not generate mock")
+			}
+
+			return nil
+		}()
+
+		if err != nil {
+			return err
 		}
 	}
 
