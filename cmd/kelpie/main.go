@@ -11,17 +11,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/adamconnelly/kelpie/parser"
-	"github.com/adamconnelly/kelpie/slices"
 )
 
 //go:embed "mock.go.tmpl"
 var mockTemplate string
 
 type GenerateCmd struct {
-	SourceFile string `short:"s" required:"" help:"The Go source file containing the interface to mock."`
-
-	// TODO: maybe we don't need the package name?
-	Package    string   `short:"p" required:"" help:"The package containing the interface to mock."`
+	SourceFile string   `short:"s" required:"" help:"The Go source file containing the interface to mock."`
 	Interfaces []string `short:"i" required:"" help:"The names of the interfaces to mock."`
 	OutputDir  string   `short:"o" required:"" default:"mocks" help:"The directory to write the mock out to."`
 }
@@ -33,12 +29,10 @@ func (g *GenerateCmd) Run() error {
 	}
 
 	filter := parser.IncludingInterfaceFilter{
-		InterfacesToInclude: slices.Map(
-			g.Interfaces,
-			func(i string) string { return fmt.Sprintf("%s.%s", g.Package, i) }),
+		InterfacesToInclude: g.Interfaces,
 	}
 
-	mockedInterfaces, err := parser.Parse(file, g.Package, &filter)
+	mockedInterfaces, err := parser.Parse(file, &filter)
 	if err != nil {
 		return errors.Wrap(err, "could not parse file")
 	}

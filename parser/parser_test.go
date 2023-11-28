@@ -35,7 +35,7 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -56,10 +56,10 @@ type UserService interface {
 	CreateUser(username string) (User, error)
 }`
 
-	t.interfaceFilter.Setup(interfacefilter.Include("github.com/adamconnelly/kelpie/tests.UserService").Return(false))
+	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -76,10 +76,10 @@ type NotificationService interface {
 	BroadcastNotification(message string) (recipients int, err error)
 }`
 
-	t.interfaceFilter.Setup(interfacefilter.Include("github.com/adamconnelly/kelpie/tests.UserService").Return(false))
+	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -128,10 +128,10 @@ type NotificationService interface {
 	Block(recipient string)
 }`
 
-	t.interfaceFilter.Setup(interfacefilter.Include("github.com/adamconnelly/kelpie/tests.UserService").Return(false))
+	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), "github.com/adamconnelly/kelpie/tests", t.interfaceFilter.Instance())
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)

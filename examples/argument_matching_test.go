@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-//go:generate go run ../cmd/kelpie generate --source-file argument_matching_test.go --package github.com/adamconnelly/kelpie/examples --interfaces Maths
+//go:generate go run ../cmd/kelpie generate --source-file argument_matching_test.go --interfaces Maths
 type Maths interface {
 	Add(a, b int) int
 	ParseInt(input string) (int, error)

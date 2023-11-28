@@ -32,7 +32,7 @@ type ResultDefinition struct {
 	Type string
 }
 
-//go:generate go run ../cmd/kelpie generate --source-file parser.go --package github.com/adamconnelly/kelpie/parser --interfaces InterfaceFilter
+//go:generate go run ../cmd/kelpie generate --source-file parser.go --interfaces InterfaceFilter
 type InterfaceFilter interface {
 	// Include indicates that the specified interface should be included in the set of interfaces
 	// to generate.
@@ -49,7 +49,7 @@ func (f *IncludingInterfaceFilter) Include(name string) bool {
 	})
 }
 
-func Parse(reader io.Reader, packageName string, filter InterfaceFilter) ([]MockedInterface, error) {
+func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) {
 	var interfaces []MockedInterface
 
 	fileSet := token.NewFileSet()
@@ -60,7 +60,7 @@ func Parse(reader io.Reader, packageName string, filter InterfaceFilter) ([]Mock
 		if t, ok := n.(*ast.TypeSpec); ok {
 			if t.Name.IsExported() {
 				if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
-					if filter.Include(packageName + "." + t.Name.Name) {
+					if filter.Include(t.Name.Name) {
 						mockedInterface := MockedInterface{
 							Name:        t.Name.Name,
 							PackageName: strings.ToLower(t.Name.Name),
