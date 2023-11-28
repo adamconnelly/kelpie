@@ -12,6 +12,7 @@ import (
 type AccountService interface {
 	SendActivationEmail(emailAddress string) bool
 	DisableAccount(id uint)
+	DisabledAccountIDs() []uint
 }
 
 type ResultTests struct {
@@ -68,6 +69,18 @@ func (t *ResultTests) Test_CanMockMethodsWithNoReturnArgs() {
 
 	// Assert
 	t.Equal(uint(123), accountID)
+}
+
+func (t *ResultTests) Test_CanMockMethodsWithNoArgs() {
+	// Arrange
+	mock := accountservice.NewMock()
+	mock.Setup(accountservice.DisabledAccountIDs().Return([]uint{1, 2, 3}))
+
+	// Act
+	result := mock.Instance().DisabledAccountIDs()
+
+	// Assert
+	t.Equal([]uint{1, 2, 3}, result)
 }
 
 func TestResults(t *testing.T) {

@@ -76,8 +76,6 @@ type NotificationService interface {
 	BroadcastNotification(message string) (recipients int, err error)
 }`
 
-	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
-
 	// Act
 	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
 
@@ -128,8 +126,6 @@ type NotificationService interface {
 	Block(recipient string)
 }`
 
-	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
-
 	// Act
 	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
 
@@ -152,6 +148,36 @@ type NotificationService interface {
 	t.Equal("string", block.Parameters[0].Type)
 
 	t.Len(block.Results, 0)
+}
+
+func (t *ParserTests) Test_Parse_SupportsSlices() {
+	// Arrange
+	input := `package test
+
+type AlarmService interface {
+	AddAlarms(names []string) []int
+}`
+
+	// Act
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Len(result, 1)
+
+	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+		return mock.Name == "AlarmService"
+	})
+	t.Equal("alarmservice", alarmService.PackageName)
+	t.Len(alarmService.Methods, 1)
+
+	addAlarms := slices.FirstOrPanic(alarmService.Methods, func(method parser.MethodDefinition) bool {
+		return method.Name == "AddAlarms"
+	})
+	t.Len(addAlarms.Parameters, 1)
+	t.Equal("[]string", addAlarms.Parameters[0].Type)
+	t.Len(addAlarms.Results, 1)
+	t.Equal("[]int", addAlarms.Results[0].Type)
 }
 
 // TODO: what about empty interfaces? Return a warning?

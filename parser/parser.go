@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -53,8 +54,9 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 	var interfaces []MockedInterface
 
 	fileSet := token.NewFileSet()
-	// TODO: test error handling
-	// TODO: handle void methods (seems to panic right now)
+
+	// For now ignore any errors on the grounds that we can still try to generate the mock,
+	// even if the Go code won't compile.
 	fileNode, _ := parser.ParseFile(fileSet, "", reader, parser.ParseComments)
 	ast.Inspect(fileNode, func(n ast.Node) bool {
 		if t, ok := n.(*ast.TypeSpec); ok {
@@ -72,13 +74,24 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 								Name: method.Names[0].Name,
 							}
 
+							getTypeName := func(e ast.Expr) string {
+								switch n := e.(type) {
+								case *ast.Ident:
+									return n.Name
+								case *ast.ArrayType:
+									return "[]" + n.Elt.(*ast.Ident).Name
+								}
+
+								panic(fmt.Sprintf("Unknown array element type %v. This is a bug in Kelpie!", e))
+							}
+
 							// TODO: check what situation would cause Type to not be ast.FuncType. Maybe ast.Bad?
 							funcType := method.Type.(*ast.FuncType)
 							for _, param := range funcType.Params.List {
 								for _, paramName := range param.Names {
 									methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
 										Name: paramName.Name,
-										Type: param.Type.(*ast.Ident).Name,
+										Type: getTypeName(param.Type),
 									})
 								}
 							}
@@ -89,12 +102,12 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 										for _, resultName := range result.Names {
 											methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
 												Name: resultName.Name,
-												Type: result.Type.(*ast.Ident).Name,
+												Type: getTypeName(result.Type),
 											})
 										}
 									} else {
 										methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-											Type: result.Type.(*ast.Ident).Name,
+											Type: getTypeName(result.Type),
 										})
 									}
 								}

@@ -61,6 +61,26 @@ func (m *Instance) DisableAccount(id uint) {
 	return
 }
 
+func (m *Instance) DisabledAccountIDs() (r0 []uint) {
+	expectation := m.mock.Call("DisabledAccountIDs", )
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func() []uint)
+			return observe()
+		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].([]uint)
+		}
+	}
+
+	return
+}
+
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
@@ -169,6 +189,60 @@ func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountExpectation 
 
 func (a *DisableAccountMethodMatcher) When(observe func(id uint)) *DisableAccountExpectation {
 	return &DisableAccountExpectation{
+		expectation: mocking.Expectation{
+			MethodMatcher: &a.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+type DisabledAccountIDsMethodMatcher struct {
+	matcher mocking.MethodMatcher
+}
+
+func (m *DisabledAccountIDsMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &m.matcher
+}
+
+func DisabledAccountIDs() *DisabledAccountIDsMethodMatcher {
+	result := DisabledAccountIDsMethodMatcher{
+		matcher: mocking.MethodMatcher{
+			MethodName:       "DisabledAccountIDs",
+			ArgumentMatchers: make([]mocking.ArgumentMatcher, 0),
+		},
+	}
+
+	return &result
+}
+
+type DisabledAccountIDsExpectation struct {
+	expectation mocking.Expectation
+}
+
+func (e *DisabledAccountIDsExpectation) CreateExpectation() *mocking.Expectation {
+	return &e.expectation
+}
+
+func (a *DisabledAccountIDsMethodMatcher) Return(r0 []uint) *DisabledAccountIDsExpectation {
+	return &DisabledAccountIDsExpectation{
+		expectation: mocking.Expectation{
+			MethodMatcher: &a.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+func (a *DisabledAccountIDsMethodMatcher) Panic(arg any) *DisabledAccountIDsExpectation {
+	return &DisabledAccountIDsExpectation{
+		expectation: mocking.Expectation{
+			MethodMatcher: &a.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+func (a *DisabledAccountIDsMethodMatcher) When(observe func() []uint) *DisabledAccountIDsExpectation {
+	return &DisabledAccountIDsExpectation{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
