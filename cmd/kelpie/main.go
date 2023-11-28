@@ -17,7 +17,7 @@ import (
 var mockTemplate string
 
 type GenerateCmd struct {
-	SourceFile string   `short:"s" required:"" help:"The Go source file containing the interface to mock."`
+	SourceFile string   `short:"s" required:"" env:"GOFILE" help:"The Go source file containing the interface to mock."`
 	Interfaces []string `short:"i" required:"" help:"The names of the interfaces to mock."`
 	OutputDir  string   `short:"o" required:"" default:"mocks" help:"The directory to write the mock out to."`
 }

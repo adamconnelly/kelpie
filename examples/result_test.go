@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-//go:generate go run ../cmd/kelpie generate --source-file result_test.go --interfaces AccountService
+//go:generate go run ../cmd/kelpie generate --interfaces AccountService
 type AccountService interface {
 	SendActivationEmail(emailAddress string) bool
 	DisableAccount(id uint)

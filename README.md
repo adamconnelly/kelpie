@@ -15,7 +15,7 @@ go install github.com/adamconnelly/kelpie/cmd/kelpie@latest
 Add a `go:generate` marker to the interface you want to mock:
 
 ```go
-//go:generate kelpie generate --source-file <filename>.go --interfaces EmailService
+//go:generate kelpie generate --interfaces EmailService
 type EmailService interface {
 	Send(sender, recipient, body string) (cost float64, err error)
 }
