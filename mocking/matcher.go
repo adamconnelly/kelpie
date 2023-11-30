@@ -8,12 +8,10 @@ type ArgumentMatcher interface {
 
 // Matcher is used to match an argument in a method invocation.
 type Matcher[T comparable] struct {
-	MatchFn    func(input T) bool
-	ExactMatch T
-	IsAny      bool
+	MatchFn func(input T) bool
 }
 
 // IsMatch returns true if other is a match to the expectation.
 func (i Matcher[T]) IsMatch(other any) bool {
-	return (i.MatchFn != nil && i.MatchFn(other.(T))) || i.ExactMatch == other.(T) || i.IsAny
+	return i.MatchFn(other.(T))
 }

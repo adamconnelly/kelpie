@@ -4,12 +4,12 @@ import "github.com/adamconnelly/kelpie/mocking"
 
 // ExactMatch matches parameters to the value of exactMatch.
 func ExactMatch[T comparable](exactMatch T) mocking.Matcher[T] {
-	return mocking.Matcher[T]{ExactMatch: exactMatch}
+	return Match(func(arg T) bool { return arg == exactMatch })
 }
 
 // Any matches any value of T.
 func Any[T comparable]() mocking.Matcher[T] {
-	return mocking.Matcher[T]{IsAny: true}
+	return Match(func(arg T) bool { return true })
 }
 
 // Match uses isMatch to determine whether an argument matches.
