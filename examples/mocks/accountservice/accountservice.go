@@ -62,7 +62,7 @@ func (m *Instance) DisableAccount(id uint) {
 }
 
 func (m *Instance) DisabledAccountIDs() (r0 []uint) {
-	expectation := m.mock.Call("DisabledAccountIDs", )
+	expectation := m.mock.Call("DisabledAccountIDs")
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
 			observe := expectation.ObserveFn.(func() []uint)

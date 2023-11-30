@@ -59,7 +59,7 @@ type Instance struct {
 {{- range $method := .Methods }}
 
 func (m *Instance) {{ $method.Name }}({{ template "parameterWithTypeList" $method.Parameters }}){{ if $method.Results }} ({{ template "resultWithTypeList" $method.Results }}){{ end }} {
-	expectation := m.mock.Call("{{ $method.Name }}", {{ template "parameterList" $method.Parameters }})
+	expectation := m.mock.Call("{{ $method.Name }}"{{ if $method.Parameters }}, {{ template "parameterList" $method.Parameters }}{{ end }})
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
 			observe := expectation.ObserveFn.({{ template "observationCallback" $method }})
