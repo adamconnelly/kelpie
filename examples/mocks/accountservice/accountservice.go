@@ -110,16 +110,8 @@ func SendActivationEmail[P0 string | mocking.Matcher[string]](emailAddress P0) *
 	return &result
 }
 
-type SendActivationEmailExpectation struct {
-	expectation mocking.Expectation
-}
-
-func (e *SendActivationEmailExpectation) CreateExpectation() *mocking.Expectation {
-	return &e.expectation
-}
-
-func (a *SendActivationEmailMethodMatcher) Return(r0 bool) *SendActivationEmailExpectation {
-	return &SendActivationEmailExpectation{
+func (a *SendActivationEmailMethodMatcher) Return(r0 bool) *SendActivationEmailAction {
+	return &SendActivationEmailAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			Returns:       []any{r0},
@@ -127,8 +119,8 @@ func (a *SendActivationEmailMethodMatcher) Return(r0 bool) *SendActivationEmailE
 	}
 }
 
-func (a *SendActivationEmailMethodMatcher) Panic(arg any) *SendActivationEmailExpectation {
-	return &SendActivationEmailExpectation{
+func (a *SendActivationEmailMethodMatcher) Panic(arg any) *SendActivationEmailAction {
+	return &SendActivationEmailAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			PanicArg:      arg,
@@ -136,13 +128,46 @@ func (a *SendActivationEmailMethodMatcher) Panic(arg any) *SendActivationEmailEx
 	}
 }
 
-func (a *SendActivationEmailMethodMatcher) When(observe func(emailAddress string) bool) *SendActivationEmailExpectation {
-	return &SendActivationEmailExpectation{
+func (a *SendActivationEmailMethodMatcher) When(observe func(emailAddress string) bool) *SendActivationEmailAction {
+	return &SendActivationEmailAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
 		},
 	}
+}
+
+type SendActivationEmailAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *SendActivationEmailAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+func (a *SendActivationEmailAction) Times(times int) *SendActivationEmailTimes {
+	a.expectation.MethodMatcher.Times = &times
+
+	return &SendActivationEmailTimes{
+		expectation: a.expectation,
+	}
+}
+
+func (a *SendActivationEmailAction) Once() *SendActivationEmailTimes {
+	times := 1
+	a.expectation.MethodMatcher.Times = &times
+
+	return &SendActivationEmailTimes{
+		expectation: a.expectation,
+	}
+}
+
+type SendActivationEmailTimes struct {
+	expectation mocking.Expectation
+}
+
+func (t *SendActivationEmailTimes) CreateExpectation() *mocking.Expectation {
+	return &t.expectation
 }
 
 type DisableAccountMethodMatcher struct {
@@ -170,16 +195,8 @@ func DisableAccount[P0 uint | mocking.Matcher[uint]](id P0) *DisableAccountMetho
 	return &result
 }
 
-type DisableAccountExpectation struct {
-	expectation mocking.Expectation
-}
-
-func (e *DisableAccountExpectation) CreateExpectation() *mocking.Expectation {
-	return &e.expectation
-}
-
-func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountExpectation {
-	return &DisableAccountExpectation{
+func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountAction {
+	return &DisableAccountAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			PanicArg:      arg,
@@ -187,13 +204,46 @@ func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountExpectation 
 	}
 }
 
-func (a *DisableAccountMethodMatcher) When(observe func(id uint)) *DisableAccountExpectation {
-	return &DisableAccountExpectation{
+func (a *DisableAccountMethodMatcher) When(observe func(id uint)) *DisableAccountAction {
+	return &DisableAccountAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
 		},
 	}
+}
+
+type DisableAccountAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *DisableAccountAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+func (a *DisableAccountAction) Times(times int) *DisableAccountTimes {
+	a.expectation.MethodMatcher.Times = &times
+
+	return &DisableAccountTimes{
+		expectation: a.expectation,
+	}
+}
+
+func (a *DisableAccountAction) Once() *DisableAccountTimes {
+	times := 1
+	a.expectation.MethodMatcher.Times = &times
+
+	return &DisableAccountTimes{
+		expectation: a.expectation,
+	}
+}
+
+type DisableAccountTimes struct {
+	expectation mocking.Expectation
+}
+
+func (t *DisableAccountTimes) CreateExpectation() *mocking.Expectation {
+	return &t.expectation
 }
 
 type DisabledAccountIDsMethodMatcher struct {
@@ -215,16 +265,8 @@ func DisabledAccountIDs() *DisabledAccountIDsMethodMatcher {
 	return &result
 }
 
-type DisabledAccountIDsExpectation struct {
-	expectation mocking.Expectation
-}
-
-func (e *DisabledAccountIDsExpectation) CreateExpectation() *mocking.Expectation {
-	return &e.expectation
-}
-
-func (a *DisabledAccountIDsMethodMatcher) Return(r0 []uint) *DisabledAccountIDsExpectation {
-	return &DisabledAccountIDsExpectation{
+func (a *DisabledAccountIDsMethodMatcher) Return(r0 []uint) *DisabledAccountIDsAction {
+	return &DisabledAccountIDsAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			Returns:       []any{r0},
@@ -232,8 +274,8 @@ func (a *DisabledAccountIDsMethodMatcher) Return(r0 []uint) *DisabledAccountIDsE
 	}
 }
 
-func (a *DisabledAccountIDsMethodMatcher) Panic(arg any) *DisabledAccountIDsExpectation {
-	return &DisabledAccountIDsExpectation{
+func (a *DisabledAccountIDsMethodMatcher) Panic(arg any) *DisabledAccountIDsAction {
+	return &DisabledAccountIDsAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			PanicArg:      arg,
@@ -241,11 +283,44 @@ func (a *DisabledAccountIDsMethodMatcher) Panic(arg any) *DisabledAccountIDsExpe
 	}
 }
 
-func (a *DisabledAccountIDsMethodMatcher) When(observe func() []uint) *DisabledAccountIDsExpectation {
-	return &DisabledAccountIDsExpectation{
+func (a *DisabledAccountIDsMethodMatcher) When(observe func() []uint) *DisabledAccountIDsAction {
+	return &DisabledAccountIDsAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
 		},
 	}
+}
+
+type DisabledAccountIDsAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *DisabledAccountIDsAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+func (a *DisabledAccountIDsAction) Times(times int) *DisabledAccountIDsTimes {
+	a.expectation.MethodMatcher.Times = &times
+
+	return &DisabledAccountIDsTimes{
+		expectation: a.expectation,
+	}
+}
+
+func (a *DisabledAccountIDsAction) Once() *DisabledAccountIDsTimes {
+	times := 1
+	a.expectation.MethodMatcher.Times = &times
+
+	return &DisabledAccountIDsTimes{
+		expectation: a.expectation,
+	}
+}
+
+type DisabledAccountIDsTimes struct {
+	expectation mocking.Expectation
+}
+
+func (t *DisabledAccountIDsTimes) CreateExpectation() *mocking.Expectation {
+	return &t.expectation
 }

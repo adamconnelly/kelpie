@@ -118,18 +118,10 @@ func {{ $method.Name }}{{ if $method.Parameters }}[{{ template "matcherTypeParam
 	return &result
 }
 
-type {{ $method.Name }}Expectation struct {
-	expectation mocking.Expectation
-}
-
-func (e *{{ $method.Name }}Expectation) CreateExpectation() *mocking.Expectation {
-	return &e.expectation
-}
-
 {{- if $method.Results }}
 
-func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Expectation {
-	return &{{ $method.Name }}Expectation{
+func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Action {
+	return &{{ $method.Name }}Action{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			Returns:       []any{ {{- template "resultList" $method.Results -}} },
@@ -138,8 +130,8 @@ func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList
 }
 {{- end }}
 
-func (a *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Expectation {
-	return &{{ $method.Name }}Expectation{
+func (a *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Action {
+	return &{{ $method.Name }}Action{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			PanicArg:      arg,
@@ -147,12 +139,45 @@ func (a *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Expe
 	}
 }
 
-func (a *{{ $method.Name }}MethodMatcher) When(observe {{ template "observationCallback" $method }}) *{{ $method.Name }}Expectation {
-	return &{{ $method.Name }}Expectation{
+func (a *{{ $method.Name }}MethodMatcher) When(observe {{ template "observationCallback" $method }}) *{{ $method.Name }}Action {
+	return &{{ $method.Name }}Action{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
 		},
 	}
+}
+
+type {{ $method.Name }}Action struct {
+	expectation mocking.Expectation
+}
+
+func (a *{{ $method.Name }}Action) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+func (a *{{ $method.Name }}Action) Times(times int) *{{ $method.Name }}Times {
+	a.expectation.MethodMatcher.Times = &times
+
+	return &{{ $method.Name }}Times{
+		expectation: a.expectation,
+	}
+}
+
+func (a *{{ $method.Name }}Action) Once() *{{ $method.Name }}Times {
+	times := 1
+	a.expectation.MethodMatcher.Times = &times
+
+	return &{{ $method.Name }}Times{
+		expectation: a.expectation,
+	}
+}
+
+type {{ $method.Name }}Times struct {
+	expectation mocking.Expectation
+}
+
+func (t *{{ $method.Name }}Times) CreateExpectation() *mocking.Expectation {
+	return &t.expectation
 }
 {{- end }}

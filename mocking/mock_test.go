@@ -6,6 +6,7 @@ import (
 
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/mocking"
+	"github.com/adamconnelly/kelpie/nullable"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -169,6 +170,53 @@ func (t *MockTests) TestCall_PanicsIfParameterCountDoesNotMatch() {
 		})
 }
 
+func (t *MockTests) TestCall_MatchesExpectationUnlimitedTimesByDefault() {
+	// Arrange
+	mock := mocking.Mock{}
+	mock.Setup(wrapExpectation(&mocking.Expectation{
+		MethodMatcher: &mocking.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []mocking.ArgumentMatcher{kelpie.ExactMatch[int](20)},
+		},
+		Returns: []any{errors.New("nope")},
+	}))
+
+	// Act
+	expectation1 := mock.Call("IncreaseVelocity", 20)
+	expectation2 := mock.Call("IncreaseVelocity", 20)
+	expectation3 := mock.Call("IncreaseVelocity", 20)
+
+	// Assert
+	t.NotNil(expectation1)
+	t.NotNil(expectation2)
+	t.NotNil(expectation3)
+}
+
+func (t *MockTests) TestCall_MatchesExpectationSpecifiedNumberOfTimes() {
+	// Arrange
+	mock := mocking.Mock{}
+	mock.Setup(wrapExpectation(&mocking.Expectation{
+		MethodMatcher: &mocking.MethodMatcher{
+			MethodName:       "IncreaseVelocity",
+			ArgumentMatchers: []mocking.ArgumentMatcher{kelpie.ExactMatch[int](20)},
+			Times:            nullable.OfValue(3),
+		},
+		Returns: []any{errors.New("nope")},
+	}))
+
+	// Act
+	expectation1 := mock.Call("IncreaseVelocity", 20)
+	expectation2 := mock.Call("IncreaseVelocity", 20)
+	expectation3 := mock.Call("IncreaseVelocity", 20)
+	expectation4 := mock.Call("IncreaseVelocity", 20)
+
+	// Assert
+	t.NotNil(expectation1)
+	t.NotNil(expectation2)
+	t.NotNil(expectation3)
+	t.Nil(expectation4)
+}
+
 func (t *MockTests) TestCalled_ReturnsFalseIfNoMethodsHaveBeenCalled() {
 	// Arrange
 	mock := mocking.Mock{}
@@ -237,6 +285,52 @@ func (t *MockTests) TestCalled_ReturnsFalseIfNotAllParametersMatch() {
 	t.False(called)
 }
 
+func (t *MockTests) TestCalled_ReturnsFalseIfMethodNotCalledEnoughTimes() {
+	// Arrange
+	mock := mocking.Mock{}
+	mock.Call("IncreaseVelocity", 20, 30)
+	mock.Call("IncreaseVelocity", 20, 30)
+	mock.Call("IncreaseVelocity", 20, 30)
+
+	// Act
+	called := mock.Called(
+		wrapMethodMatcher(
+			&mocking.MethodMatcher{
+				MethodName: "IncreaseVelocity",
+				ArgumentMatchers: []mocking.ArgumentMatcher{
+					kelpie.Any[int](),
+					kelpie.Any[int](),
+				},
+				Times: nullable.OfValue(4),
+			}))
+
+	// Assert
+	t.False(called)
+}
+
+func (t *MockTests) TestCalled_ReturnsTrueIfMethodCalledEnoughTimes() {
+	// Arrange
+	mock := mocking.Mock{}
+	mock.Call("IncreaseVelocity", 20, 30)
+	mock.Call("IncreaseVelocity", 20, 30)
+	mock.Call("IncreaseVelocity", 20, 30)
+
+	// Act
+	called := mock.Called(
+		wrapMethodMatcher(
+			&mocking.MethodMatcher{
+				MethodName: "IncreaseVelocity",
+				ArgumentMatchers: []mocking.ArgumentMatcher{
+					kelpie.Any[int](),
+					kelpie.Any[int](),
+				},
+				Times: nullable.OfValue(3),
+			}))
+
+	// Assert
+	t.True(called)
+}
+
 func (t *MockTests) TestCalled_PanicsIfArgumentCountDoesNotMatch() {
 	// Arrange
 	mock := mocking.Mock{}
@@ -245,7 +339,7 @@ func (t *MockTests) TestCalled_PanicsIfArgumentCountDoesNotMatch() {
 	// Act
 	// Act / Assert
 	t.PanicsWithValue(
-		"Argument mismatch when checking call to 'IncreaseVelocity'.\n    Expected: 3\n    Actual: 1\nThis is a bug in Kelpie - please report it!",
+		"Argument mismatch in call to 'IncreaseVelocity'.\n    Expected: 3\n    Actual: 1\nThis is a bug in Kelpie - please report it!",
 		func() {
 			mock.Called(
 				wrapMethodMatcher(

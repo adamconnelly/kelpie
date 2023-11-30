@@ -103,16 +103,8 @@ func Add[P0 int | mocking.Matcher[int], P1 int | mocking.Matcher[int]](a P0, b P
 	return &result
 }
 
-type AddExpectation struct {
-	expectation mocking.Expectation
-}
-
-func (e *AddExpectation) CreateExpectation() *mocking.Expectation {
-	return &e.expectation
-}
-
-func (a *AddMethodMatcher) Return(r0 int) *AddExpectation {
-	return &AddExpectation{
+func (a *AddMethodMatcher) Return(r0 int) *AddAction {
+	return &AddAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			Returns:       []any{r0},
@@ -120,8 +112,8 @@ func (a *AddMethodMatcher) Return(r0 int) *AddExpectation {
 	}
 }
 
-func (a *AddMethodMatcher) Panic(arg any) *AddExpectation {
-	return &AddExpectation{
+func (a *AddMethodMatcher) Panic(arg any) *AddAction {
+	return &AddAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			PanicArg:      arg,
@@ -129,13 +121,46 @@ func (a *AddMethodMatcher) Panic(arg any) *AddExpectation {
 	}
 }
 
-func (a *AddMethodMatcher) When(observe func(a int, b int) int) *AddExpectation {
-	return &AddExpectation{
+func (a *AddMethodMatcher) When(observe func(a int, b int) int) *AddAction {
+	return &AddAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
 		},
 	}
+}
+
+type AddAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *AddAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+func (a *AddAction) Times(times int) *AddTimes {
+	a.expectation.MethodMatcher.Times = &times
+
+	return &AddTimes{
+		expectation: a.expectation,
+	}
+}
+
+func (a *AddAction) Once() *AddTimes {
+	times := 1
+	a.expectation.MethodMatcher.Times = &times
+
+	return &AddTimes{
+		expectation: a.expectation,
+	}
+}
+
+type AddTimes struct {
+	expectation mocking.Expectation
+}
+
+func (t *AddTimes) CreateExpectation() *mocking.Expectation {
+	return &t.expectation
 }
 
 type ParseIntMethodMatcher struct {
@@ -163,16 +188,8 @@ func ParseInt[P0 string | mocking.Matcher[string]](input P0) *ParseIntMethodMatc
 	return &result
 }
 
-type ParseIntExpectation struct {
-	expectation mocking.Expectation
-}
-
-func (e *ParseIntExpectation) CreateExpectation() *mocking.Expectation {
-	return &e.expectation
-}
-
-func (a *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntExpectation {
-	return &ParseIntExpectation{
+func (a *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntAction {
+	return &ParseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			Returns:       []any{r0, r1},
@@ -180,8 +197,8 @@ func (a *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntExpectation {
 	}
 }
 
-func (a *ParseIntMethodMatcher) Panic(arg any) *ParseIntExpectation {
-	return &ParseIntExpectation{
+func (a *ParseIntMethodMatcher) Panic(arg any) *ParseIntAction {
+	return &ParseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			PanicArg:      arg,
@@ -189,11 +206,44 @@ func (a *ParseIntMethodMatcher) Panic(arg any) *ParseIntExpectation {
 	}
 }
 
-func (a *ParseIntMethodMatcher) When(observe func(input string) (int, error)) *ParseIntExpectation {
-	return &ParseIntExpectation{
+func (a *ParseIntMethodMatcher) When(observe func(input string) (int, error)) *ParseIntAction {
+	return &ParseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &a.matcher,
 			ObserveFn:     observe,
 		},
 	}
+}
+
+type ParseIntAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *ParseIntAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+func (a *ParseIntAction) Times(times int) *ParseIntTimes {
+	a.expectation.MethodMatcher.Times = &times
+
+	return &ParseIntTimes{
+		expectation: a.expectation,
+	}
+}
+
+func (a *ParseIntAction) Once() *ParseIntTimes {
+	times := 1
+	a.expectation.MethodMatcher.Times = &times
+
+	return &ParseIntTimes{
+		expectation: a.expectation,
+	}
+}
+
+type ParseIntTimes struct {
+	expectation mocking.Expectation
+}
+
+func (t *ParseIntTimes) CreateExpectation() *mocking.Expectation {
+	return &t.expectation
 }
