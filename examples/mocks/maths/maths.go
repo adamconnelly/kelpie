@@ -103,6 +103,7 @@ func Add[P0 int | mocking.Matcher[int], P1 int | mocking.Matcher[int]](a P0, b P
 	return &result
 }
 
+// Return returns the specified results when the method is called.
 func (a *AddMethodMatcher) Return(r0 int) *AddAction {
 	return &AddAction{
 		expectation: mocking.Expectation{
@@ -112,6 +113,7 @@ func (a *AddMethodMatcher) Return(r0 int) *AddAction {
 	}
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *AddMethodMatcher) Panic(arg any) *AddAction {
 	return &AddAction{
 		expectation: mocking.Expectation{
@@ -121,6 +123,7 @@ func (a *AddMethodMatcher) Panic(arg any) *AddAction {
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *AddMethodMatcher) When(observe func(a int, b int) int) *AddAction {
 	return &AddAction{
 		expectation: mocking.Expectation{
@@ -138,6 +141,7 @@ func (a *AddAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *AddAction) Times(times int) *AddTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -146,6 +150,7 @@ func (a *AddAction) Times(times int) *AddTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *AddAction) Once() *AddTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times
@@ -188,6 +193,7 @@ func ParseInt[P0 string | mocking.Matcher[string]](input P0) *ParseIntMethodMatc
 	return &result
 }
 
+// Return returns the specified results when the method is called.
 func (a *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntAction {
 	return &ParseIntAction{
 		expectation: mocking.Expectation{
@@ -197,6 +203,7 @@ func (a *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntAction {
 	}
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *ParseIntMethodMatcher) Panic(arg any) *ParseIntAction {
 	return &ParseIntAction{
 		expectation: mocking.Expectation{
@@ -206,6 +213,7 @@ func (a *ParseIntMethodMatcher) Panic(arg any) *ParseIntAction {
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *ParseIntMethodMatcher) When(observe func(input string) (int, error)) *ParseIntAction {
 	return &ParseIntAction{
 		expectation: mocking.Expectation{
@@ -223,6 +231,7 @@ func (a *ParseIntAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *ParseIntAction) Times(times int) *ParseIntTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -231,6 +240,7 @@ func (a *ParseIntAction) Times(times int) *ParseIntTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *ParseIntAction) Once() *ParseIntTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times

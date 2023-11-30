@@ -73,6 +73,7 @@ func Include[P0 string | mocking.Matcher[string]](name P0) *IncludeMethodMatcher
 	return &result
 }
 
+// Return returns the specified results when the method is called.
 func (a *IncludeMethodMatcher) Return(r0 bool) *IncludeAction {
 	return &IncludeAction{
 		expectation: mocking.Expectation{
@@ -82,6 +83,7 @@ func (a *IncludeMethodMatcher) Return(r0 bool) *IncludeAction {
 	}
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *IncludeMethodMatcher) Panic(arg any) *IncludeAction {
 	return &IncludeAction{
 		expectation: mocking.Expectation{
@@ -91,6 +93,7 @@ func (a *IncludeMethodMatcher) Panic(arg any) *IncludeAction {
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *IncludeMethodMatcher) When(observe func(name string) bool) *IncludeAction {
 	return &IncludeAction{
 		expectation: mocking.Expectation{
@@ -108,6 +111,7 @@ func (a *IncludeAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *IncludeAction) Times(times int) *IncludeTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -116,6 +120,7 @@ func (a *IncludeAction) Times(times int) *IncludeTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *IncludeAction) Once() *IncludeTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times

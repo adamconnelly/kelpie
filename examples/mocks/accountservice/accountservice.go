@@ -110,6 +110,7 @@ func SendActivationEmail[P0 string | mocking.Matcher[string]](emailAddress P0) *
 	return &result
 }
 
+// Return returns the specified results when the method is called.
 func (a *SendActivationEmailMethodMatcher) Return(r0 bool) *SendActivationEmailAction {
 	return &SendActivationEmailAction{
 		expectation: mocking.Expectation{
@@ -119,6 +120,7 @@ func (a *SendActivationEmailMethodMatcher) Return(r0 bool) *SendActivationEmailA
 	}
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *SendActivationEmailMethodMatcher) Panic(arg any) *SendActivationEmailAction {
 	return &SendActivationEmailAction{
 		expectation: mocking.Expectation{
@@ -128,6 +130,7 @@ func (a *SendActivationEmailMethodMatcher) Panic(arg any) *SendActivationEmailAc
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *SendActivationEmailMethodMatcher) When(observe func(emailAddress string) bool) *SendActivationEmailAction {
 	return &SendActivationEmailAction{
 		expectation: mocking.Expectation{
@@ -145,6 +148,7 @@ func (a *SendActivationEmailAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *SendActivationEmailAction) Times(times int) *SendActivationEmailTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -153,6 +157,7 @@ func (a *SendActivationEmailAction) Times(times int) *SendActivationEmailTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *SendActivationEmailAction) Once() *SendActivationEmailTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times
@@ -195,6 +200,7 @@ func DisableAccount[P0 uint | mocking.Matcher[uint]](id P0) *DisableAccountMetho
 	return &result
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountAction {
 	return &DisableAccountAction{
 		expectation: mocking.Expectation{
@@ -204,6 +210,7 @@ func (a *DisableAccountMethodMatcher) Panic(arg any) *DisableAccountAction {
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *DisableAccountMethodMatcher) When(observe func(id uint)) *DisableAccountAction {
 	return &DisableAccountAction{
 		expectation: mocking.Expectation{
@@ -221,6 +228,7 @@ func (a *DisableAccountAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *DisableAccountAction) Times(times int) *DisableAccountTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -229,6 +237,7 @@ func (a *DisableAccountAction) Times(times int) *DisableAccountTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *DisableAccountAction) Once() *DisableAccountTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times
@@ -265,6 +274,7 @@ func DisabledAccountIDs() *DisabledAccountIDsMethodMatcher {
 	return &result
 }
 
+// Return returns the specified results when the method is called.
 func (a *DisabledAccountIDsMethodMatcher) Return(r0 []uint) *DisabledAccountIDsAction {
 	return &DisabledAccountIDsAction{
 		expectation: mocking.Expectation{
@@ -274,6 +284,7 @@ func (a *DisabledAccountIDsMethodMatcher) Return(r0 []uint) *DisabledAccountIDsA
 	}
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *DisabledAccountIDsMethodMatcher) Panic(arg any) *DisabledAccountIDsAction {
 	return &DisabledAccountIDsAction{
 		expectation: mocking.Expectation{
@@ -283,6 +294,7 @@ func (a *DisabledAccountIDsMethodMatcher) Panic(arg any) *DisabledAccountIDsActi
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *DisabledAccountIDsMethodMatcher) When(observe func() []uint) *DisabledAccountIDsAction {
 	return &DisabledAccountIDsAction{
 		expectation: mocking.Expectation{
@@ -300,6 +312,7 @@ func (a *DisabledAccountIDsAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *DisabledAccountIDsAction) Times(times int) *DisabledAccountIDsTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -308,6 +321,7 @@ func (a *DisabledAccountIDsAction) Times(times int) *DisabledAccountIDsTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *DisabledAccountIDsAction) Once() *DisabledAccountIDsTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times

@@ -73,6 +73,7 @@ func CreateAlarm[P0 string | mocking.Matcher[string]](name P0) *CreateAlarmMetho
 	return &result
 }
 
+// Return returns the specified results when the method is called.
 func (a *CreateAlarmMethodMatcher) Return(r0 error) *CreateAlarmAction {
 	return &CreateAlarmAction{
 		expectation: mocking.Expectation{
@@ -82,6 +83,7 @@ func (a *CreateAlarmMethodMatcher) Return(r0 error) *CreateAlarmAction {
 	}
 }
 
+// Panic panics using the specified argument when the method is called.
 func (a *CreateAlarmMethodMatcher) Panic(arg any) *CreateAlarmAction {
 	return &CreateAlarmAction{
 		expectation: mocking.Expectation{
@@ -91,6 +93,7 @@ func (a *CreateAlarmMethodMatcher) Panic(arg any) *CreateAlarmAction {
 	}
 }
 
+// When calls the specified observe callback when the method is called.
 func (a *CreateAlarmMethodMatcher) When(observe func(name string) error) *CreateAlarmAction {
 	return &CreateAlarmAction{
 		expectation: mocking.Expectation{
@@ -108,6 +111,7 @@ func (a *CreateAlarmAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
+// Times allows you to restrict the number of times a particular expectation can be matched.
 func (a *CreateAlarmAction) Times(times int) *CreateAlarmTimes {
 	a.expectation.MethodMatcher.Times = &times
 
@@ -116,6 +120,7 @@ func (a *CreateAlarmAction) Times(times int) *CreateAlarmTimes {
 	}
 }
 
+// Once specifies that the expectation will only match once.
 func (a *CreateAlarmAction) Once() *CreateAlarmTimes {
 	times := 1
 	a.expectation.MethodMatcher.Times = &times
