@@ -9,7 +9,7 @@ import (
 type MethodMatcher struct {
 	MethodName       string
 	ArgumentMatchers []ArgumentMatcher
-	Times            *int
+	Times            *uint
 }
 
 type Expectation struct {
@@ -51,7 +51,7 @@ func (m *Mock) Call(methodName string, args ...any) *Expectation {
 			calls := slices.All(m.MethodCalls, func(methodCall *MethodCall) bool {
 				return methodMatchesExpectation(methodMatcher, methodCall.MethodName, methodCall.Args...)
 			})
-			if len(calls) <= *expectation.MethodMatcher.Times {
+			if uint(len(calls)) <= *expectation.MethodMatcher.Times {
 				return expectation
 			}
 		} else if methodMatchesExpectation(methodMatcher, methodName, args...) {
@@ -70,7 +70,7 @@ func (m *Mock) Called(creator MethodMatcherCreator) bool {
 			return methodMatchesExpectation(methodMatcher, call.MethodName, call.Args...)
 		})
 
-		return len(matches) == *methodMatcher.Times
+		return uint(len(matches)) == *methodMatcher.Times
 	}
 
 	return slices.Contains(m.MethodCalls, func(call *MethodCall) bool {

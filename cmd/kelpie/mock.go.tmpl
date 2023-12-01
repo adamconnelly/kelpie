@@ -118,13 +118,37 @@ func {{ $method.Name }}{{ if $method.Parameters }}[{{ template "matcherTypeParam
 	return &result
 }
 
+type {{ $method.Name }}Times struct {
+	matcher *{{ $method.Name }}MethodMatcher
+}
+
+// Times allows you to restrict the number of times a particular expectation can be matched.
+func (m *{{ $method.Name }}MethodMatcher) Times(times uint) *{{ $method.Name }}Times {
+	m.matcher.Times = &times
+
+	return &{{ $method.Name }}Times{
+		matcher: m,
+	}
+}
+
+// Once specifies that the expectation will only match once.
+func (m *{{ $method.Name }}MethodMatcher) Once() *{{ $method.Name }}Times {
+	return m.Times(1)
+}
+
+// Never specifies that the method has not been called. This is mainly useful for verification
+// rather than mocking.
+func (m *{{ $method.Name }}MethodMatcher) Never() *{{ $method.Name }}Times {
+	return m.Times(0)
+}
+
 {{- if $method.Results }}
 
 // Return returns the specified results when the method is called.
-func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Action {
+func (t *{{ $method.Name }}Times) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Action {
 	return &{{ $method.Name }}Action{
 		expectation: mocking.Expectation{
-			MethodMatcher: &a.matcher,
+			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{ {{- template "resultList" $method.Results -}} },
 		},
 	}
@@ -132,20 +156,57 @@ func (a *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList
 {{- end }}
 
 // Panic panics using the specified argument when the method is called.
-func (a *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Action {
+func (t *{{ $method.Name }}Times) Panic(arg any) *{{ $method.Name }}Action {
 	return &{{ $method.Name }}Action{
 		expectation: mocking.Expectation{
-			MethodMatcher: &a.matcher,
+			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
 		},
 	}
 }
 
 // When calls the specified observe callback when the method is called.
-func (a *{{ $method.Name }}MethodMatcher) When(observe {{ template "observationCallback" $method }}) *{{ $method.Name }}Action {
+func (t *{{ $method.Name }}Times) When(observe {{ template "observationCallback" $method }}) *{{ $method.Name }}Action {
 	return &{{ $method.Name }}Action{
 		expectation: mocking.Expectation{
-			MethodMatcher: &a.matcher,
+			MethodMatcher: &t.matcher.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+func (t *{{ $method.Name }}Times) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &t.matcher.matcher
+}
+
+{{- if $method.Results }}
+
+// Return returns the specified results when the method is called.
+func (m *{{ $method.Name }}MethodMatcher) Return({{ template "resultWithTypeList" $method.Results }}) *{{ $method.Name }}Action {
+	return &{{ $method.Name }}Action{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			Returns:       []any{ {{- template "resultList" $method.Results -}} },
+		},
+	}
+}
+{{- end }}
+
+// Panic panics using the specified argument when the method is called.
+func (m *{{ $method.Name }}MethodMatcher) Panic(arg any) *{{ $method.Name }}Action {
+	return &{{ $method.Name }}Action{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (m *{{ $method.Name }}MethodMatcher) When(observe {{ template "observationCallback" $method }}) *{{ $method.Name }}Action {
+	return &{{ $method.Name }}Action{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
 		},
 	}
@@ -157,32 +218,5 @@ type {{ $method.Name }}Action struct {
 
 func (a *{{ $method.Name }}Action) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
-}
-
-// Times allows you to restrict the number of times a particular expectation can be matched.
-func (a *{{ $method.Name }}Action) Times(times int) *{{ $method.Name }}Times {
-	a.expectation.MethodMatcher.Times = &times
-
-	return &{{ $method.Name }}Times{
-		expectation: a.expectation,
-	}
-}
-
-// Once specifies that the expectation will only match once.
-func (a *{{ $method.Name }}Action) Once() *{{ $method.Name }}Times {
-	times := 1
-	a.expectation.MethodMatcher.Times = &times
-
-	return &{{ $method.Name }}Times{
-		expectation: a.expectation,
-	}
-}
-
-type {{ $method.Name }}Times struct {
-	expectation mocking.Expectation
-}
-
-func (t *{{ $method.Name }}Times) CreateExpectation() *mocking.Expectation {
-	return &t.expectation
 }
 {{- end }}

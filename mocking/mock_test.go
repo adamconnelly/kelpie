@@ -199,7 +199,7 @@ func (t *MockTests) TestCall_MatchesExpectationSpecifiedNumberOfTimes() {
 		MethodMatcher: &mocking.MethodMatcher{
 			MethodName:       "IncreaseVelocity",
 			ArgumentMatchers: []mocking.ArgumentMatcher{kelpie.ExactMatch[int](20)},
-			Times:            nullable.OfValue(3),
+			Times:            nullable.OfValue[uint](3),
 		},
 		Returns: []any{errors.New("nope")},
 	}))
@@ -301,7 +301,7 @@ func (t *MockTests) TestCalled_ReturnsFalseIfMethodNotCalledEnoughTimes() {
 					kelpie.Any[int](),
 					kelpie.Any[int](),
 				},
-				Times: nullable.OfValue(4),
+				Times: nullable.OfValue[uint](4),
 			}))
 
 	// Assert
@@ -324,7 +324,7 @@ func (t *MockTests) TestCalled_ReturnsTrueIfMethodCalledEnoughTimes() {
 					kelpie.Any[int](),
 					kelpie.Any[int](),
 				},
-				Times: nullable.OfValue(3),
+				Times: nullable.OfValue[uint](3),
 			}))
 
 	// Assert

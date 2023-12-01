@@ -73,31 +73,89 @@ func Include[P0 string | mocking.Matcher[string]](name P0) *IncludeMethodMatcher
 	return &result
 }
 
+type IncludeTimes struct {
+	matcher *IncludeMethodMatcher
+}
+
+// Times allows you to restrict the number of times a particular expectation can be matched.
+func (m *IncludeMethodMatcher) Times(times uint) *IncludeTimes {
+	m.matcher.Times = &times
+
+	return &IncludeTimes{
+		matcher: m,
+	}
+}
+
+// Once specifies that the expectation will only match once.
+func (m *IncludeMethodMatcher) Once() *IncludeTimes {
+	return m.Times(1)
+}
+
+// Never specifies that the method has not been called. This is mainly useful for verification
+// rather than mocking.
+func (m *IncludeMethodMatcher) Never() *IncludeTimes {
+	return m.Times(0)
+}
+
 // Return returns the specified results when the method is called.
-func (a *IncludeMethodMatcher) Return(r0 bool) *IncludeAction {
+func (t *IncludeTimes) Return(r0 bool) *IncludeAction {
 	return &IncludeAction{
 		expectation: mocking.Expectation{
-			MethodMatcher: &a.matcher,
+			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
 		},
 	}
 }
 
 // Panic panics using the specified argument when the method is called.
-func (a *IncludeMethodMatcher) Panic(arg any) *IncludeAction {
+func (t *IncludeTimes) Panic(arg any) *IncludeAction {
 	return &IncludeAction{
 		expectation: mocking.Expectation{
-			MethodMatcher: &a.matcher,
+			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
 		},
 	}
 }
 
 // When calls the specified observe callback when the method is called.
-func (a *IncludeMethodMatcher) When(observe func(name string) bool) *IncludeAction {
+func (t *IncludeTimes) When(observe func(name string) bool) *IncludeAction {
 	return &IncludeAction{
 		expectation: mocking.Expectation{
-			MethodMatcher: &a.matcher,
+			MethodMatcher: &t.matcher.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+func (t *IncludeTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &t.matcher.matcher
+}
+
+// Return returns the specified results when the method is called.
+func (m *IncludeMethodMatcher) Return(r0 bool) *IncludeAction {
+	return &IncludeAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (m *IncludeMethodMatcher) Panic(arg any) *IncludeAction {
+	return &IncludeAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (m *IncludeMethodMatcher) When(observe func(name string) bool) *IncludeAction {
+	return &IncludeAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
 		},
 	}
@@ -109,31 +167,4 @@ type IncludeAction struct {
 
 func (a *IncludeAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
-}
-
-// Times allows you to restrict the number of times a particular expectation can be matched.
-func (a *IncludeAction) Times(times int) *IncludeTimes {
-	a.expectation.MethodMatcher.Times = &times
-
-	return &IncludeTimes{
-		expectation: a.expectation,
-	}
-}
-
-// Once specifies that the expectation will only match once.
-func (a *IncludeAction) Once() *IncludeTimes {
-	times := 1
-	a.expectation.MethodMatcher.Times = &times
-
-	return &IncludeTimes{
-		expectation: a.expectation,
-	}
-}
-
-type IncludeTimes struct {
-	expectation mocking.Expectation
-}
-
-func (t *IncludeTimes) CreateExpectation() *mocking.Expectation {
-	return &t.expectation
 }
