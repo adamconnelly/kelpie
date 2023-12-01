@@ -1,3 +1,5 @@
+// Package parser contains the parser for reading Go files and building the interface definitions
+// needed to generate mocks.
 package parser
 
 import (
@@ -11,45 +13,71 @@ import (
 	"github.com/adamconnelly/kelpie/slices"
 )
 
+// MockedInterface represents an interface that a mock should be generated for.
 type MockedInterface struct {
-	Name        string
-	PackageName string
-	Methods     []MethodDefinition
-}
-
-type MethodDefinition struct {
-	Name       string
-	Parameters []ParameterDefinition
-	Results    []ResultDefinition
-}
-
-type ParameterDefinition struct {
+	// Name contains the name of the interface.
 	Name string
+
+	// PackageName contains the name of the package that the interface belongs to.
+	PackageName string
+
+	// Methods contains the list of methods in the interface.
+	Methods []MethodDefinition
+}
+
+// MethodDefinition defines a method in an interface.
+type MethodDefinition struct {
+	// Name is the name of the method.
+	Name string
+
+	// Parameters contains the parameters passed to the method.
+	Parameters []ParameterDefinition
+
+	// Results contains the method results.
+	Results []ResultDefinition
+}
+
+// ParameterDefinition contains information about a method parameter.
+type ParameterDefinition struct {
+	// Name is the name of the parameter.
+	Name string
+
+	// Type is the parameter's type.
 	Type string
 }
 
+// ResultDefinition contains information about a method result.
 type ResultDefinition struct {
+	// Name is the name of the method result. This can be empty if the result is not named.
 	Name string
+
+	// Type is the type of the result.
 	Type string
 }
 
 //go:generate go run ../cmd/kelpie generate --interfaces InterfaceFilter
+
+// InterfaceFilter is used to decide which interfaces mocks should be generated for.
 type InterfaceFilter interface {
 	// Include indicates that the specified interface should be included in the set of interfaces
 	// to generate.
 	Include(name string) bool
 }
 
+// IncludingInterfaceFilter is an InterfaceFilter that works based on an allow-list of interface
+// names.
 type IncludingInterfaceFilter struct {
 	InterfacesToInclude []string
 }
 
+// Include returns true if the specified interface should be mocked, false otherwise.
 func (f *IncludingInterfaceFilter) Include(name string) bool {
 	return slices.Contains(f.InterfacesToInclude, func(n string) bool {
 		return n == name
 	})
 }
 
+// Parse parses the source contained in the reader.
 func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) {
 	var interfaces []MockedInterface
 

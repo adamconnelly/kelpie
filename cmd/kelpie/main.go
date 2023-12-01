@@ -1,3 +1,4 @@
+// Package main contains the Kelpie code generator.
 package main
 
 import (
@@ -16,13 +17,13 @@ import (
 //go:embed "mock.go.tmpl"
 var mockTemplate string
 
-type GenerateCmd struct {
+type generateCmd struct {
 	SourceFile string   `short:"s" required:"" env:"GOFILE" help:"The Go source file containing the interface to mock."`
 	Interfaces []string `short:"i" required:"" help:"The names of the interfaces to mock."`
 	OutputDir  string   `short:"o" required:"" default:"mocks" help:"The directory to write the mock out to."`
 }
 
-func (g *GenerateCmd) Run() error {
+func (g *generateCmd) Run() error {
 	file, err := os.Open(g.SourceFile)
 	if err != nil {
 		return errors.Wrap(err, "could not open file for parsing")
@@ -43,9 +44,11 @@ func (g *GenerateCmd) Run() error {
 		err := func() error {
 			outputDirectoryName := filepath.Join(g.OutputDir, i.PackageName)
 			if _, err := os.Stat(outputDirectoryName); os.IsNotExist(err) {
-				os.MkdirAll(outputDirectoryName, 0700)
+				if err := os.MkdirAll(outputDirectoryName, 0700); err != nil {
+					return errors.Wrap(err, "could not create directory for mock")
+				}
 			}
-			file, err := os.Create(filepath.Join(outputDirectoryName, fmt.Sprintf("%s.go", i.PackageName)))
+			file, err := os.Create(filepath.Clean(filepath.Join(outputDirectoryName, fmt.Sprintf("%s.go", i.PackageName))))
 			if err != nil {
 				return errors.Wrap(err, "could not open output file")
 			}
@@ -67,7 +70,7 @@ func (g *GenerateCmd) Run() error {
 }
 
 var cli struct {
-	Generate GenerateCmd `cmd:"" help:"Generate a mock."`
+	Generate generateCmd `cmd:"" help:"Generate a mock."`
 }
 
 func main() {

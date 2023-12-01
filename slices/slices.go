@@ -1,3 +1,4 @@
+// Package slices contains generic functions for working with slices.
 package slices
 
 // FirstOrPanic returns the first item matching the closure, and panics if there are no matches.

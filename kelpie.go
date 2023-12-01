@@ -1,3 +1,4 @@
+// Package kelpie contains helpers for matching arguments when configuring a mock.
 package kelpie
 
 import "github.com/adamconnelly/kelpie/mocking"

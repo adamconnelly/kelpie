@@ -1,3 +1,6 @@
+// Package mocking contains the mocking logic for Kelpie. This includes types for creating
+// expectations as well as the Mock type which is used by the generated mocks to record method
+// calls and verify expectations.
 package mocking
 
 import (
@@ -6,41 +9,67 @@ import (
 	"github.com/adamconnelly/kelpie/slices"
 )
 
-type MethodMatcher struct {
-	MethodName       string
-	ArgumentMatchers []ArgumentMatcher
-	Times            *uint
-}
-
+// Expectation represents an expected method call.
 type Expectation struct {
+	// MethodMatcher contains the information needed to match a specific method call to an expectation.
 	MethodMatcher *MethodMatcher
-	Returns       []any
-	PanicArg      any
-	ObserveFn     any
+
+	// Returns contains any arguments that should be returned from the method call.
+	Returns []any
+
+	// PanicArg contains the argument passed to `panic()`.
+	PanicArg any
+
+	// ObserveFn contains a function that should be used as the implementation of the mocked method.
+	ObserveFn any
 }
 
+// MethodMatcherCreator is used to create a MethodMatcher. This is used to allow us to build
+// the fluent API that ensures that only the details of an expected method call can be passed
+// to `Called`, rather than allowing a full setup expression containing an action.
 type MethodMatcherCreator interface {
 	CreateMethodMatcher() *MethodMatcher
 }
 
+// ExpectationCreator creates an expected method call including the details needed to match
+// the method, as well as the result that should occur (i.e. return something, panic or call
+// a custom function).
 type ExpectationCreator interface {
 	CreateExpectation() *Expectation
 }
 
+// MethodCall is used to record a method that has been called.
 type MethodCall struct {
+	// MethodName is the name of the method that will be called.
 	MethodName string
-	Args       []any
+
+	// Args contains the list of arguments passed to the method.
+	Args []any
 }
 
+// Mock contains the main mocking logic.
 type Mock struct {
+	// Expectations contains the list of expected method calls that have been setup.
 	Expectations []*Expectation
-	MethodCalls  []*MethodCall
+
+	// MethodCalls contains the method calls that have been recorded.
+	MethodCalls []*MethodCall
 }
 
+// Setup is used to configure a method call for a mock. The setup contains the information
+// needed to match a specific method call, as well as the action that should occur when the
+// method is called.
+//
+// Examples:
+//
+//	mock.Setup(calculator.Add(1, kelpie.Any[int]).Return(5))
+//	mock.Setup(client.Request("abc").Times(3).Return(errors.New("request failed")))
 func (m *Mock) Setup(creator ExpectationCreator) {
 	m.Expectations = append([]*Expectation{creator.CreateExpectation()}, m.Expectations...)
 }
 
+// Call records a method call, and returns an expectation if any can be found. If no expectations
+// match the specified method call, nil will be returned.
 func (m *Mock) Call(methodName string, args ...any) *Expectation {
 	m.MethodCalls = append(m.MethodCalls, &MethodCall{MethodName: methodName, Args: args})
 
@@ -62,6 +91,7 @@ func (m *Mock) Call(methodName string, args ...any) *Expectation {
 	return nil
 }
 
+// Called verifies whether a method matching the specified signature has been called.
 func (m *Mock) Called(creator MethodMatcherCreator) bool {
 	methodMatcher := creator.CreateMethodMatcher()
 
@@ -78,6 +108,7 @@ func (m *Mock) Called(creator MethodMatcherCreator) bool {
 	})
 }
 
+// Reset clears the expectations and recorded method calls on the mock.
 func (m *Mock) Reset() {
 	m.Expectations = nil
 	m.MethodCalls = nil

@@ -15,3 +15,10 @@ type Matcher[T comparable] struct {
 func (i Matcher[T]) IsMatch(other any) bool {
 	return i.MatchFn(other.(T))
 }
+
+// MethodMatcher is used to match a method call to an expectation.
+type MethodMatcher struct {
+	MethodName       string
+	ArgumentMatchers []ArgumentMatcher
+	Times            *uint
+}
