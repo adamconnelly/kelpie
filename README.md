@@ -161,6 +161,42 @@ emailServiceMock.Setup(
 		}))
 ```
 
+### Verifying Method Calls
+
+You can verify that a method has been called using the `mock.Called()` method:
+
+```go
+// Arrange
+mock := registrationservice.NewMock()
+
+// Act
+mock.Instance().Register("Mark")
+mock.Instance().Register("Jim")
+
+// Assert
+t.True(mock.Called(registrationservice.Register("Mark")))
+t.True(mock.Called(registrationservice.Register(kelpie.Any[string]()).Times(2)))
+t.False(mock.Called(registrationservice.Register("Wendy")))
+```
+
+### Times
+
+You can configure a method call to only match a certain number of times, or verify a method has been called a certain number of times using the `Times()`, `Once()` and `Never()` helpers:
+
+```go
+// Arrange
+mock := registrationservice.NewMock()
+
+// Act
+mock.Instance().Register("Mark")
+mock.Instance().Register("Jim")
+
+// Assert
+t.True(mock.Called(registrationservice.Register("Mark").Once()))
+t.True(mock.Called(registrationservice.Register(kelpie.Any[string]()).Times(2)))
+t.True(mock.Called(registrationservice.Register("Wendy").Never()))
+```
+
 ## FAQ
 
 ### What makes Kelpie so magical
