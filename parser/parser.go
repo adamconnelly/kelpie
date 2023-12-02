@@ -35,6 +35,9 @@ type MethodDefinition struct {
 
 	// Results contains the method results.
 	Results []ResultDefinition
+
+	// Comment contains any comments added to the method.
+	Comment string
 }
 
 // ParameterDefinition contains information about a method parameter.
@@ -99,7 +102,8 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 						for _, method := range typeSpecType.Methods.List {
 							methodDefinition := MethodDefinition{
 								// When are there multiple names?
-								Name: method.Names[0].Name,
+								Name:    method.Names[0].Name,
+								Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
 							}
 
 							getTypeName := func(e ast.Expr) string {

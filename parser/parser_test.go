@@ -180,6 +180,38 @@ type AlarmService interface {
 	t.Equal("[]int", addAlarms.Results[0].Type)
 }
 
+func (t *ParserTests) Test_Parse_IncludesComments() {
+	// Arrange
+	input := `package test
+
+// AlarmService can be used to create and manage various alarms.
+type AlarmService interface {
+	// AddAlarms adds new alarms, returning the alarm IDs.
+	//
+	// Here's some super-exciting information about this method.
+	AddAlarms(names []string) []int
+}`
+
+	// Act
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Len(result, 1)
+
+	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+		return mock.Name == "AlarmService"
+	})
+
+	addAlarms := slices.FirstOrPanic(alarmService.Methods, func(method parser.MethodDefinition) bool {
+		return method.Name == "AddAlarms"
+	})
+	t.Equal(
+		`AddAlarms adds new alarms, returning the alarm IDs.
+
+Here's some super-exciting information about this method.`, addAlarms.Comment)
+}
+
 // TODO: what about empty interfaces? Return a warning?
 
 func TestParser(t *testing.T) {

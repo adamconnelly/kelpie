@@ -24,6 +24,7 @@ type Instance struct {
 	mock *Mock
 }
 
+// Register registers the item with the specified name.
 func (m *Instance) Register(name string) (r0 error) {
 	expectation := m.mock.Call("Register", name)
 	if expectation != nil {
@@ -56,6 +57,7 @@ func (m *RegisterMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
+// Register registers the item with the specified name.
 func Register[P0 string | mocking.Matcher[string]](name P0) *RegisterMethodMatcher {
 	result := RegisterMethodMatcher{
 		matcher: mocking.MethodMatcher{

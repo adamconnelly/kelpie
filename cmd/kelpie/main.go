@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/alecthomas/kong"
 	"github.com/pkg/errors"
 
 	"github.com/adamconnelly/kelpie/parser"
+	"github.com/adamconnelly/kelpie/slices"
 )
 
 //go:embed "mock.go.tmpl"
@@ -38,7 +40,16 @@ func (g *generateCmd) Run() error {
 		return errors.Wrap(err, "could not parse file")
 	}
 
-	template := template.Must(template.New("mock").Parse(mockTemplate))
+	template := template.Must(template.New("mock").
+		Funcs(template.FuncMap{
+			"CommentBlock": func(comment string) string {
+				lines := strings.Split(comment, "\n")
+				return strings.Join(slices.Map(lines, func(line string) string {
+					return "// " + line
+				}), "\n")
+			},
+		}).
+		Parse(mockTemplate))
 
 	for _, i := range mockedInterfaces {
 		err := func() error {

@@ -11,6 +11,7 @@ import (
 
 //go:generate go run ../cmd/kelpie generate --interfaces RegistrationService
 type RegistrationService interface {
+	// Register registers the item with the specified name.
 	Register(name string) error
 }
 

@@ -24,6 +24,8 @@ type Instance struct {
 	mock *Mock
 }
 
+// Include indicates that the specified interface should be included in the set of interfaces
+// to generate.
 func (m *Instance) Include(name string) (r0 bool) {
 	expectation := m.mock.Call("Include", name)
 	if expectation != nil {
@@ -56,6 +58,8 @@ func (m *IncludeMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
+// Include indicates that the specified interface should be included in the set of interfaces
+// to generate.
 func Include[P0 string | mocking.Matcher[string]](name P0) *IncludeMethodMatcher {
 	result := IncludeMethodMatcher{
 		matcher: mocking.MethodMatcher{

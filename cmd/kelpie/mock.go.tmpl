@@ -58,6 +58,8 @@ type Instance struct {
 
 {{- range $method := .Methods }}
 
+{{ if $method.Comment }}{{ CommentBlock $method.Comment }}
+{{ end -}}
 func (m *Instance) {{ $method.Name }}({{ template "parameterWithTypeList" $method.Parameters }}){{ if $method.Results }} ({{ template "resultWithTypeList" $method.Results }}){{ end }} {
 	expectation := m.mock.Call("{{ $method.Name }}"{{ if $method.Parameters }}, {{ template "parameterList" $method.Parameters }}{{ end }})
 	if expectation != nil {
@@ -101,6 +103,8 @@ func (m *{{ $method.Name }}MethodMatcher) CreateMethodMatcher() *mocking.MethodM
 	return &m.matcher
 }
 
+{{ if $method.Comment }}{{ CommentBlock $method.Comment }}
+{{ end -}}
 func {{ $method.Name }}{{ if $method.Parameters }}[{{ template "matcherTypeParams" $method.Parameters }}]{{ end }}({{ template "matcherParams" $method.Parameters }}) *{{ $method.Name }}MethodMatcher {
 	result := {{ $method.Name }}MethodMatcher{
 		matcher: mocking.MethodMatcher{
