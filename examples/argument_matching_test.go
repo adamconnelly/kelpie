@@ -1,10 +1,12 @@
 package examples
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/examples/mocks/maths"
+	"github.com/adamconnelly/kelpie/examples/mocks/sender"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,6 +35,11 @@ type Maths interface {
 	// size, err.Err = ErrRange and the returned value is the maximum magnitude integer of the
 	// appropriate bitSize and sign.
 	ParseInt(input string) (int, error)
+}
+
+//go:generate go run ../cmd/kelpie generate --interfaces Sender
+type Sender interface {
+	SendMessage(title *string, message string) error
 }
 
 type ArgumentMatchingTests struct {
@@ -89,6 +96,18 @@ func (t *ArgumentMatchingTests) Test_CanUseCustomMatchingLogic() {
 	// Assert
 	t.Equal(30, result1)
 	t.Equal(0, result2)
+}
+
+func (t *ArgumentMatchingTests) Test_CanMatchNil() {
+	// Arrange
+	mock := sender.NewMock()
+	mock.Setup(sender.SendMessage((*string)(nil), "Open the gates").Return(errors.New("the way is shut!")))
+
+	// Act
+	err := mock.Instance().SendMessage(nil, "Open the gates")
+
+	// Assert
+	t.ErrorContains(err, "the way is shut")
 }
 
 func TestArgumentMatching(t *testing.T) {

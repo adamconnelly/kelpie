@@ -212,6 +212,27 @@ type AlarmService interface {
 Here's some super-exciting information about this method.`, addAlarms.Comment)
 }
 
+func (t *ParserTests) Test_Parse_HandlesPointers() {
+	// Arrange
+	input := `package test
+
+type EmailSender interface {
+	SendEmail(recipient string, title *string, message string) (*bool, error)
+}`
+
+	// Act
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	sendNotification := result[0].Methods[0]
+	t.Equal("title", sendNotification.Parameters[1].Name)
+	t.Equal("*string", sendNotification.Parameters[1].Type)
+
+	t.Equal("*bool", sendNotification.Results[0].Type)
+}
+
 // TODO: what about empty interfaces? Return a warning?
 
 func TestParser(t *testing.T) {

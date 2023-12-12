@@ -106,17 +106,6 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 								Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
 							}
 
-							getTypeName := func(e ast.Expr) string {
-								switch n := e.(type) {
-								case *ast.Ident:
-									return n.Name
-								case *ast.ArrayType:
-									return "[]" + n.Elt.(*ast.Ident).Name
-								}
-
-								panic(fmt.Sprintf("Unknown array element type %v. This is a bug in Kelpie!", e))
-							}
-
 							// TODO: check what situation would cause Type to not be ast.FuncType. Maybe ast.Bad?
 							funcType := method.Type.(*ast.FuncType)
 							for _, param := range funcType.Params.List {
@@ -158,4 +147,17 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 	})
 
 	return interfaces, nil
+}
+
+func getTypeName(e ast.Expr) string {
+	switch n := e.(type) {
+	case *ast.Ident:
+		return n.Name
+	case *ast.ArrayType:
+		return "[]" + n.Elt.(*ast.Ident).Name
+	case *ast.StarExpr:
+		return "*" + getTypeName(n.X)
+	}
+
+	panic(fmt.Sprintf("Unknown array element type %v. This is a bug in Kelpie!", e))
 }
