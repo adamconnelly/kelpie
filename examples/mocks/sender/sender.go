@@ -2,6 +2,7 @@
 package sender
 
 import (
+	"net/http"
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/mocking"
 )
@@ -38,6 +39,23 @@ func (m *Instance) SendMessage(title *string, message string) (r0 error) {
 
 		if expectation.Returns[0] != nil {
 			r0 = expectation.Returns[0].(error)
+		}
+	}
+
+	return
+}
+
+func (m *Instance) MakeRequest(request *http.Request) {
+	expectation := m.mock.Call("MakeRequest", request)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(request *http.Request))
+			observe(request)
+			return
+		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
 		}
 	}
 
@@ -172,5 +190,106 @@ type SendMessageAction struct {
 }
 
 func (a *SendMessageAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+type MakeRequestMethodMatcher struct {
+	matcher mocking.MethodMatcher
+}
+
+func (m *MakeRequestMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &m.matcher
+}
+
+func MakeRequest[P0 *http.Request | mocking.Matcher[*http.Request]](request P0) *MakeRequestMethodMatcher {
+	result := MakeRequestMethodMatcher{
+		matcher: mocking.MethodMatcher{
+			MethodName:       "MakeRequest",
+			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
+		},
+	}
+
+	if matcher, ok := any(request).(mocking.Matcher[*http.Request]); ok {
+		result.matcher.ArgumentMatchers[0] = matcher
+	} else {
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(request).(*http.Request))
+	}
+
+	return &result
+}
+
+type MakeRequestTimes struct {
+	matcher *MakeRequestMethodMatcher
+}
+
+// Times allows you to restrict the number of times a particular expectation can be matched.
+func (m *MakeRequestMethodMatcher) Times(times uint) *MakeRequestTimes {
+	m.matcher.Times = &times
+
+	return &MakeRequestTimes{
+		matcher: m,
+	}
+}
+
+// Once specifies that the expectation will only match once.
+func (m *MakeRequestMethodMatcher) Once() *MakeRequestTimes {
+	return m.Times(1)
+}
+
+// Never specifies that the method has not been called. This is mainly useful for verification
+// rather than mocking.
+func (m *MakeRequestMethodMatcher) Never() *MakeRequestTimes {
+	return m.Times(0)
+}
+
+// Panic panics using the specified argument when the method is called.
+func (t *MakeRequestTimes) Panic(arg any) *MakeRequestAction {
+	return &MakeRequestAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (t *MakeRequestTimes) When(observe func(request *http.Request)) *MakeRequestAction {
+	return &MakeRequestAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+func (t *MakeRequestTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &t.matcher.matcher
+}
+
+// Panic panics using the specified argument when the method is called.
+func (m *MakeRequestMethodMatcher) Panic(arg any) *MakeRequestAction {
+	return &MakeRequestAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (m *MakeRequestMethodMatcher) When(observe func(request *http.Request)) *MakeRequestAction {
+	return &MakeRequestAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+type MakeRequestAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *MakeRequestAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

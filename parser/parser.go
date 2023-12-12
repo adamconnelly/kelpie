@@ -23,6 +23,9 @@ type MockedInterface struct {
 
 	// Methods contains the list of methods in the interface.
 	Methods []MethodDefinition
+
+	// Imports contains a list of imports required by the mocked interface.
+	Imports []string
 }
 
 // MethodDefinition defines a method in an interface.
@@ -89,7 +92,22 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 	// For now ignore any errors on the grounds that we can still try to generate the mock,
 	// even if the Go code won't compile.
 	fileNode, _ := parser.ParseFile(fileSet, "", reader, parser.ParseComments)
+
+	imports := make(map[string]string)
+
 	ast.Inspect(fileNode, func(n ast.Node) bool {
+		if i, ok := n.(*ast.ImportSpec); ok {
+			importValue := i.Path.Value
+			lastSlashIndex := strings.LastIndex(i.Path.Value, "/")
+			importName := i.Path.Value[lastSlashIndex+1 : len(i.Path.Value)-1]
+			if i.Name != nil && i.Name.Name != "" {
+				importName = i.Name.Name
+				importValue = importName + " " + i.Path.Value
+			}
+
+			imports[importName] = importValue
+		}
+
 		if t, ok := n.(*ast.TypeSpec); ok {
 			if t.Name.IsExported() {
 				if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
@@ -110,25 +128,35 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 							funcType := method.Type.(*ast.FuncType)
 							for _, param := range funcType.Params.List {
 								for _, paramName := range param.Names {
+									paramTypeImport, paramType := getImportAndType(param.Type, imports)
+									if paramTypeImport != "" {
+										mockedInterface.Imports = append(mockedInterface.Imports, paramTypeImport)
+									}
+
 									methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
 										Name: paramName.Name,
-										Type: getTypeName(param.Type),
+										Type: paramType,
 									})
 								}
 							}
 
 							if funcType.Results != nil {
 								for _, result := range funcType.Results.List {
+									resultTypeImport, resultType := getImportAndType(result.Type, imports)
+									if resultTypeImport != "" {
+										mockedInterface.Imports = append(mockedInterface.Imports, resultTypeImport)
+									}
+
 									if len(result.Names) > 0 {
 										for _, resultName := range result.Names {
 											methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
 												Name: resultName.Name,
-												Type: getTypeName(result.Type),
+												Type: resultType,
 											})
 										}
 									} else {
 										methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-											Type: getTypeName(result.Type),
+											Type: resultType,
 										})
 									}
 								}
@@ -149,15 +177,29 @@ func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) 
 	return interfaces, nil
 }
 
-func getTypeName(e ast.Expr) string {
+func getImportAndType(e ast.Expr, imports map[string]string) (string, string) {
 	switch n := e.(type) {
-	case *ast.Ident:
-		return n.Name
-	case *ast.ArrayType:
-		return "[]" + n.Elt.(*ast.Ident).Name
+	case *ast.SelectorExpr:
+		i := n.X.(*ast.Ident)
+
+		return imports[i.Name], i.Name + "." + n.Sel.Name
 	case *ast.StarExpr:
-		return "*" + getTypeName(n.X)
+		i, t := getImportAndType(n.X, imports)
+
+		return i, "*" + t
+	case *ast.ArrayType:
+		i, t := getImportAndType(n.Elt, imports)
+
+		return i, "[]" + t
 	}
 
-	panic(fmt.Sprintf("Unknown array element type %v. This is a bug in Kelpie!", e))
+	return "", getTypeName(e)
+}
+
+func getTypeName(e ast.Expr) string {
+	if n, ok := e.(*ast.Ident); ok {
+		return n.Name
+	}
+
+	panic(fmt.Sprintf("Unknown type %v. This is a bug in Kelpie!", e))
 }
