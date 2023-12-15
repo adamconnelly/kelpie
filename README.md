@@ -4,6 +4,16 @@
 
 Kelpie is the most magical mock generator for Go. Kelpie aims to be easy to use, and generates fully type-safe mocks for Go interfaces.
 
+## Project Status
+
+At the moment Kelpie is very much in development, and there are missing features and some pretty rough edges. You're of course welcome to use Kelpie, but just be prepared to hit problems and raise issues or PRs!
+
+The following is a list of known-outstanding features:
+
+- [ ] Generating mocks for external (i.e. not in your source tree) interfaces by name.
+- [ ] Generating mocks for inline interfaces in structs.
+- [ ] Support for types that require imports.
+
 ## Quickstart
 
 Install Kelpie:
@@ -201,4 +211,6 @@ t.True(mock.Called(registrationservice.Register("Wendy").Never()))
 
 ### What makes Kelpie so magical
 
-The fact it's called Kelpie. Other than that it's not very magical.
+[Kelpies](https://en.wikipedia.org/wiki/Kelpie) are magical creatures from Scottish folk-lore that have shape-shifting abilities. This name seemed fitting for a mocking library, where generated mocks match the shape of interfaces that you want to simulate.
+
+But other than that, there's nothing very magical about Kelpie.
