@@ -233,6 +233,39 @@ type EmailSender interface {
 	t.Equal("*bool", sendNotification.Results[0].Type)
 }
 
+func (t *ParserTests) Test_Parse_CanHandleComplexTypes() {
+	// Arrange
+	input := `package test
+
+	import (
+		"net/http"
+
+		"github.com/superrequester/requester/responses"
+		rh "github.com/superrequester/requester/http"
+	)
+
+type Requester interface {
+	Request(request *http.Request, headers []rh.Header) (*responses.Response, error)
+}`
+
+	// Act
+	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	request := result[0].Methods[0]
+	t.Equal("request", request.Parameters[0].Name)
+	t.Equal("*http.Request", request.Parameters[0].Type)
+
+	t.Equal("headers", request.Parameters[1].Name)
+	t.Equal("[]rh.Header", request.Parameters[1].Type)
+
+	t.Contains(result[0].Imports, `"net/http"`)
+	t.Contains(result[0].Imports, `"github.com/superrequester/requester/responses"`)
+	t.Contains(result[0].Imports, `rh "github.com/superrequester/requester/http"`)
+}
+
 // TODO: what about empty interfaces? Return a warning?
 
 func TestParser(t *testing.T) {

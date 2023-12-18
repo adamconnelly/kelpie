@@ -2,6 +2,7 @@ package examples
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/adamconnelly/kelpie"
@@ -40,6 +41,7 @@ type Maths interface {
 //go:generate go run ../cmd/kelpie generate --interfaces Sender
 type Sender interface {
 	SendMessage(title *string, message string) error
+	MakeRequest(request *http.Request)
 }
 
 type ArgumentMatchingTests struct {
