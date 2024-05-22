@@ -1,9 +1,11 @@
 package parser_test
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/adamconnelly/kelpie"
@@ -35,7 +37,7 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -59,7 +61,7 @@ type UserService interface {
 	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -77,7 +79,7 @@ type NotificationService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -127,7 +129,7 @@ type NotificationService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -159,7 +161,7 @@ type AlarmService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -193,7 +195,7 @@ type AlarmService interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -221,7 +223,7 @@ type EmailSender interface {
 }`
 
 	// Act
-	result, err := parser.Parse(strings.NewReader(input), t.interfaceFilter.Instance())
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
@@ -231,6 +233,63 @@ type EmailSender interface {
 	t.Equal("*string", sendNotification.Parameters[1].Type)
 
 	t.Equal("*bool", sendNotification.Results[0].Type)
+}
+
+func (t *ParserTests) Test_ParsePackage_HandlesPointers() {
+	// Arrange
+	input := `package test
+
+type EmailSender interface {
+	SendEmail(recipient string, title *string, message string) (*bool, error)
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	sendNotification := result[0].Methods[0]
+	t.Equal("title", sendNotification.Parameters[1].Name)
+	t.Equal("*string", sendNotification.Parameters[1].Type)
+
+	t.Equal("*bool", sendNotification.Results[0].Type)
+}
+
+func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]parser.MockedInterface, error) {
+	tmpDir, err := os.MkdirTemp("", "kelpie-parser-tests")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp dir for module")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	packageDir := filepath.Join(tmpDir, packageName)
+
+	if err := os.Mkdir(packageDir, os.ModePerm); err != nil {
+		return nil, errors.Wrap(err, "could not create package directory")
+	}
+
+	goMod, err := os.Create(filepath.Join(tmpDir, "go.mod"))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create file for go.mod")
+	}
+
+	if _, err := goMod.WriteString(`module github.com/adamconnelly/kelpie-test
+
+go 1.22.1`); err != nil {
+		return nil, errors.Wrap(err, "could not write go.mod file")
+	}
+
+	testFile, err := os.Create(filepath.Join(packageDir, "test.go"))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create temp file for source")
+	}
+
+	if _, err := testFile.WriteString(input); err != nil {
+		return nil, errors.Wrap(err, "could not write test case to file")
+	}
+
+	return parser.Parse("github.com/adamconnelly/kelpie-test/"+packageName, tmpDir, filter)
 }
 
 // TODO: what about empty interfaces? Return a warning?

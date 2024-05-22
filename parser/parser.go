@@ -5,10 +5,10 @@ package parser
 import (
 	"fmt"
 	"go/ast"
-	"go/parser"
-	"go/token"
-	"io"
 	"strings"
+
+	"github.com/pkg/errors"
+	"golang.org/x/tools/go/packages"
 
 	"github.com/adamconnelly/kelpie/slices"
 )
@@ -81,70 +81,77 @@ func (f *IncludingInterfaceFilter) Include(name string) bool {
 }
 
 // Parse parses the source contained in the reader.
-func Parse(reader io.Reader, filter InterfaceFilter) ([]MockedInterface, error) {
+func Parse(packageName string, directory string, filter InterfaceFilter) ([]MockedInterface, error) {
 	var interfaces []MockedInterface
 
-	fileSet := token.NewFileSet()
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax,
+		Dir:  directory,
+	}, "pattern="+packageName)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load type information")
+	}
 
-	// For now ignore any errors on the grounds that we can still try to generate the mock,
-	// even if the Go code won't compile.
-	fileNode, _ := parser.ParseFile(fileSet, "", reader, parser.ParseComments)
-	ast.Inspect(fileNode, func(n ast.Node) bool {
-		if t, ok := n.(*ast.TypeSpec); ok {
-			if t.Name.IsExported() {
-				if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
-					if filter.Include(t.Name.Name) {
-						mockedInterface := MockedInterface{
-							Name:        t.Name.Name,
-							PackageName: strings.ToLower(t.Name.Name),
-						}
-
-						for _, method := range typeSpecType.Methods.List {
-							methodDefinition := MethodDefinition{
-								// When are there multiple names?
-								Name:    method.Names[0].Name,
-								Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
-							}
-
-							// TODO: check what situation would cause Type to not be ast.FuncType. Maybe ast.Bad?
-							funcType := method.Type.(*ast.FuncType)
-							for _, param := range funcType.Params.List {
-								for _, paramName := range param.Names {
-									methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-										Name: paramName.Name,
-										Type: getTypeName(param.Type),
-									})
+	for _, p := range pkgs {
+		for _, fileNode := range p.Syntax {
+			ast.Inspect(fileNode, func(n ast.Node) bool {
+				if t, ok := n.(*ast.TypeSpec); ok {
+					if t.Name.IsExported() {
+						if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
+							if filter.Include(t.Name.Name) {
+								mockedInterface := MockedInterface{
+									Name:        t.Name.Name,
+									PackageName: strings.ToLower(t.Name.Name),
 								}
-							}
 
-							if funcType.Results != nil {
-								for _, result := range funcType.Results.List {
-									if len(result.Names) > 0 {
-										for _, resultName := range result.Names {
-											methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-												Name: resultName.Name,
-												Type: getTypeName(result.Type),
+								for _, method := range typeSpecType.Methods.List {
+									methodDefinition := MethodDefinition{
+										// When are there multiple names?
+										Name:    method.Names[0].Name,
+										Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
+									}
+
+									// TODO: check what situation would cause Type to not be ast.FuncType. Maybe ast.Bad?
+									funcType := method.Type.(*ast.FuncType)
+									for _, param := range funcType.Params.List {
+										for _, paramName := range param.Names {
+											methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
+												Name: paramName.Name,
+												Type: getTypeName(param.Type),
 											})
 										}
-									} else {
-										methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-											Type: getTypeName(result.Type),
-										})
 									}
+
+									if funcType.Results != nil {
+										for _, result := range funcType.Results.List {
+											if len(result.Names) > 0 {
+												for _, resultName := range result.Names {
+													methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+														Name: resultName.Name,
+														Type: getTypeName(result.Type),
+													})
+												}
+											} else {
+												methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+													Type: getTypeName(result.Type),
+												})
+											}
+										}
+									}
+
+									mockedInterface.Methods = append(mockedInterface.Methods, methodDefinition)
 								}
+
+								interfaces = append(interfaces, mockedInterface)
 							}
-
-							mockedInterface.Methods = append(mockedInterface.Methods, methodDefinition)
 						}
-
-						interfaces = append(interfaces, mockedInterface)
 					}
 				}
-			}
-		}
 
-		return true
-	})
+				return true
+			})
+		}
+	}
 
 	return interfaces, nil
 }

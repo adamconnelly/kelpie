@@ -21,21 +21,17 @@ var mockTemplate string
 
 type generateCmd struct {
 	SourceFile string   `short:"s" required:"" env:"GOFILE" help:"The Go source file containing the interface to mock."`
+	Package    string   `short:"p" required:"" env:"GOPACKAGE" help:"The Go package containing the interface to mock."`
 	Interfaces []string `short:"i" required:"" help:"The names of the interfaces to mock."`
 	OutputDir  string   `short:"o" required:"" default:"mocks" help:"The directory to write the mock out to."`
 }
 
 func (g *generateCmd) Run() error {
-	file, err := os.Open(g.SourceFile)
-	if err != nil {
-		return errors.Wrap(err, "could not open file for parsing")
-	}
-
 	filter := parser.IncludingInterfaceFilter{
 		InterfacesToInclude: g.Interfaces,
 	}
 
-	mockedInterfaces, err := parser.Parse(file, &filter)
+	mockedInterfaces, err := parser.Parse(g.Package, filepath.Dir(g.SourceFile), &filter)
 	if err != nil {
 		return errors.Wrap(err, "could not parse file")
 	}
