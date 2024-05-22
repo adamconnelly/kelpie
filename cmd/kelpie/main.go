@@ -20,8 +20,7 @@ import (
 var mockTemplate string
 
 type generateCmd struct {
-	SourceFile string   `short:"s" required:"" env:"GOFILE" help:"The Go source file containing the interface to mock."`
-	Package    string   `short:"p" required:"" env:"GOPACKAGE" help:"The Go package containing the interface to mock."`
+	Package    string   `short:"p" required:"" help:"The Go package containing the interface to mock."`
 	Interfaces []string `short:"i" required:"" help:"The names of the interfaces to mock."`
 	OutputDir  string   `short:"o" required:"" default:"mocks" help:"The directory to write the mock out to."`
 }
@@ -31,7 +30,12 @@ func (g *generateCmd) Run() error {
 		InterfacesToInclude: g.Interfaces,
 	}
 
-	mockedInterfaces, err := parser.Parse(g.Package, filepath.Dir(g.SourceFile), &filter)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "could not get current working directory")
+	}
+
+	mockedInterfaces, err := parser.Parse(g.Package, cwd, &filter)
 	if err != nil {
 		return errors.Wrap(err, "could not parse file")
 	}

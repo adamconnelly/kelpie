@@ -9,7 +9,7 @@ import (
 	"github.com/adamconnelly/kelpie/examples/mocks/registrationservice"
 )
 
-//go:generate go run ../cmd/kelpie generate --interfaces RegistrationService
+//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces RegistrationService
 type RegistrationService interface {
 	// Register registers the item with the specified name.
 	Register(name string) error

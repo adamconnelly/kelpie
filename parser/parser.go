@@ -58,7 +58,7 @@ type ResultDefinition struct {
 	Type string
 }
 
-//go:generate go run ../cmd/kelpie generate --interfaces InterfaceFilter
+//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/parser --interfaces InterfaceFilter
 
 // InterfaceFilter is used to decide which interfaces mocks should be generated for.
 type InterfaceFilter interface {
@@ -85,8 +85,9 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 	var interfaces []MockedInterface
 
 	pkgs, err := packages.Load(&packages.Config{
-		Mode: packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax,
-		Dir:  directory,
+		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax,
+		Dir:   directory,
+		Tests: true,
 	}, "pattern="+packageName)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load type information")
