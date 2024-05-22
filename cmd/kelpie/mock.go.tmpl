@@ -36,6 +36,9 @@ package {{ .PackageName }}
 import (
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/mocking"
+	{{- range $i := .Imports }}
+	{{ $i }}
+	{{- end }}
 )
 
 type Mock struct {

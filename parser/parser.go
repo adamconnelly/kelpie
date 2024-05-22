@@ -5,11 +5,13 @@ package parser
 import (
 	"fmt"
 	"go/ast"
+	"go/types"
 	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/tools/go/packages"
 
+	"github.com/adamconnelly/kelpie/maps"
 	"github.com/adamconnelly/kelpie/slices"
 )
 
@@ -23,6 +25,9 @@ type MockedInterface struct {
 
 	// Methods contains the list of methods in the interface.
 	Methods []MethodDefinition
+
+	// Imports contains the list of imports required by the mocked interface.
+	Imports []string
 }
 
 // MethodDefinition defines a method in an interface.
@@ -80,12 +85,27 @@ func (f *IncludingInterfaceFilter) Include(name string) bool {
 	})
 }
 
+type packageImporter struct {
+}
+
+func (p *packageImporter) Import(path string) (*types.Package, error) {
+	conf := &packages.Config{Mode: packages.NeedImports}
+	pkgs, err := packages.Load(conf, path)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load package")
+	} else {
+		fmt.Println(pkgs)
+	}
+
+	return &types.Package{}, nil
+}
+
 // Parse parses the source contained in the reader.
 func Parse(packageName string, directory string, filter InterfaceFilter) ([]MockedInterface, error) {
 	var interfaces []MockedInterface
 
 	pkgs, err := packages.Load(&packages.Config{
-		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax,
+		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo,
 		Dir:   directory,
 		Tests: true,
 	}, "pattern="+packageName)
@@ -95,8 +115,19 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 
 	for _, p := range pkgs {
 		for _, fileNode := range p.Syntax {
+			importStatements := make(map[string]string)
+
 			ast.Inspect(fileNode, func(n ast.Node) bool {
-				if t, ok := n.(*ast.TypeSpec); ok {
+				if t, ok := n.(*ast.ImportSpec); ok {
+					if t.Path.Value == "" {
+						importStatements[t.Name.Name] = t.Name.Name
+					} else if t.Name == nil {
+						packageName := t.Path.Value[1 : len(t.Path.Value)-1]
+						importStatements[packageName] = t.Path.Value
+					} else {
+						importStatements[strings.ReplaceAll(t.Path.Value, `"`, "")] = t.Name.Name + " " + t.Path.Value
+					}
+				} else if t, ok := n.(*ast.TypeSpec); ok {
 					if t.Name.IsExported() {
 						if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
 							if filter.Include(t.Name.Name) {
@@ -104,6 +135,8 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 									Name:        t.Name.Name,
 									PackageName: strings.ToLower(t.Name.Name),
 								}
+
+								imports := make(map[string]any)
 
 								for _, method := range typeSpecType.Methods.List {
 									methodDefinition := MethodDefinition{
@@ -116,32 +149,44 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 									funcType := method.Type.(*ast.FuncType)
 									for _, param := range funcType.Params.List {
 										for _, paramName := range param.Names {
+											typeName, requiredImport := getTypeInfo(param.Type, p.TypesInfo, importStatements)
 											methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
 												Name: paramName.Name,
-												Type: getTypeName(param.Type),
+												Type: typeName,
 											})
+
+											if requiredImport != "" {
+												imports[requiredImport] = struct{}{}
+											}
 										}
 									}
 
 									if funcType.Results != nil {
 										for _, result := range funcType.Results.List {
+											typeName, requiredImport := getTypeInfo(result.Type, p.TypesInfo, importStatements)
 											if len(result.Names) > 0 {
 												for _, resultName := range result.Names {
 													methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
 														Name: resultName.Name,
-														Type: getTypeName(result.Type),
+														Type: typeName,
 													})
 												}
 											} else {
 												methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-													Type: getTypeName(result.Type),
+													Type: typeName,
 												})
+											}
+
+											if requiredImport != "" {
+												imports[requiredImport] = struct{}{}
 											}
 										}
 									}
 
 									mockedInterface.Methods = append(mockedInterface.Methods, methodDefinition)
 								}
+
+								mockedInterface.Imports = maps.Keys(imports)
 
 								interfaces = append(interfaces, mockedInterface)
 							}
@@ -157,15 +202,33 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 	return interfaces, nil
 }
 
-func getTypeName(e ast.Expr) string {
+func getTypeInfo(e ast.Expr, typeInfo *types.Info, imports map[string]string) (name string, requiredImport string) {
 	switch n := e.(type) {
 	case *ast.Ident:
-		return n.Name
+		var importStatement string
+		if use, ok := typeInfo.Uses[n]; ok && use.Pkg() != nil {
+			importStatement = imports[use.Pkg().Path()]
+		}
+
+		return n.Name, importStatement
 	case *ast.ArrayType:
-		return "[]" + n.Elt.(*ast.Ident).Name
+		return "[]" + n.Elt.(*ast.Ident).Name, ""
 	case *ast.StarExpr:
-		return "*" + getTypeName(n.X)
+		name, requiredImport := getTypeInfo(n.X, typeInfo, imports)
+		return "*" + name, requiredImport
+	case *ast.SelectorExpr:
+		packageName, _ := getTypeInfo(n.X, typeInfo, imports)
+
+		var importStatement string
+		use := typeInfo.Uses[n.Sel]
+		if use != nil {
+			importStatement = imports[use.Pkg().Path()]
+		} else {
+			importStatement = imports[packageName]
+		}
+
+		return packageName + "." + n.Sel.Name, importStatement
 	}
 
-	panic(fmt.Sprintf("Unknown array element type %v. This is a bug in Kelpie!", e))
+	panic(fmt.Sprintf("Unknown type %v. This is a bug in Kelpie!", e))
 }

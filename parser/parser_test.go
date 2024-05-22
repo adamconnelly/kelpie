@@ -256,6 +256,123 @@ type EmailSender interface {
 	t.Equal("*bool", sendNotification.Results[0].Type)
 }
 
+func (t *ParserTests) Test_Parse_ReturnsImportInformation() {
+	// Arrange
+	input := `package test
+
+import (
+	io
+	"net/http"
+)
+
+type Requester interface {
+	MakeRequest(r *http.Request) io.Reader
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 2)
+	t.Contains(requester.Imports, `io`)
+	t.Contains(requester.Imports, `"net/http"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsDotImports() {
+	// Arrange
+	input := `package test
+
+import . "net/http"
+
+type Requester interface {
+	MakeRequest(r *Request) *Response
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `. "net/http"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsNamedImports() {
+	// Arrange
+	input := `package test
+
+import h "net/http"
+
+type Requester interface {
+	MakeRequest(r *h.Request) *h.Response
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `h "net/http"`)
+}
+
+func (t *ParserTests) Test_abc() {
+	// Arrange
+	input := `package examples
+
+	import (
+		"io"
+		. "net/http"
+		"testing"
+	
+		"github.com/stretchr/testify/suite"
+	)
+	
+	//go:generate go run ../cmd/kelpie generate --interfaces Requester
+	type Requester interface {
+		Request(r *Request) (io.Reader, error)
+	}
+	
+	type ImportedTypesTest struct {
+		suite.Suite
+	}
+	
+	func (t *ImportedTypesTest) Test_CanUseAMockWithImportedTypes() {
+		// Arrange
+		// mock := accountservice.NewMock()
+		// mock.Setup(accountservice.SendActivationEmail("a@b.com").Return(true))
+		// mock := requester.NewMock()
+		// mock.Setup(requester.Request())
+	
+		// Act
+		// result := mock.Instance().SendActivationEmail("a@b.com")
+	
+		// Assert
+		// t.True(result)
+	}
+	
+	func TestImportedTypes(t *testing.T) {
+		suite.Run(t, new(ImportedTypesTest))
+	}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `h "net/http"`)
+}
+
 func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]parser.MockedInterface, error) {
 	tmpDir, err := os.MkdirTemp("", "kelpie-parser-tests")
 	if err != nil {
