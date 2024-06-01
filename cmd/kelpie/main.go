@@ -45,6 +45,10 @@ func (g *generateCmd) Run() error {
 			"CommentBlock": func(comment string) string {
 				lines := strings.Split(comment, "\n")
 				return strings.Join(slices.Map(lines, func(line string) string {
+					if line == "" {
+						return "//"
+					}
+
 					return "// " + line
 				}), "\n")
 			},
