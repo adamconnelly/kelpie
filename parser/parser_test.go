@@ -33,7 +33,7 @@ type NotificationService interface {
 }
 
 type UserService interface {
-	CreateUser(username string) (User, error)
+	CreateUser(username string) (string, error)
 }`
 
 	// Act
@@ -55,7 +55,7 @@ type NotificationService interface {
 }
 
 type UserService interface {
-	CreateUser(username string) (User, error)
+	CreateUser(username string) (string, error)
 }`
 
 	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
@@ -85,7 +85,7 @@ type NotificationService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	notificationService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
 		return mock.Name == "NotificationService"
 	})
 	t.Equal("notificationservice", notificationService.PackageName)
@@ -135,7 +135,7 @@ type NotificationService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	notificationService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
 		return mock.Name == "NotificationService"
 	})
 	t.Equal("notificationservice", notificationService.PackageName)
@@ -167,7 +167,7 @@ type AlarmService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	alarmService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
 		return mock.Name == "AlarmService"
 	})
 	t.Equal("alarmservice", alarmService.PackageName)
@@ -201,7 +201,7 @@ type AlarmService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	alarmService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
 		return mock.Name == "AlarmService"
 	})
 
@@ -256,7 +256,79 @@ type EmailSender interface {
 	t.Equal("*bool", sendNotification.Results[0].Type)
 }
 
-func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]parser.MockedInterface, error) {
+func (t *ParserTests) Test_Parse_ReturnsImportInformation() {
+	// Arrange
+	input := `package test
+
+import (
+	"io"
+	"net/http"
+)
+
+type Requester interface {
+	MakeRequest(r *http.Request) io.Reader
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 2)
+	t.Contains(requester.Imports, `"io"`)
+	t.Contains(requester.Imports, `"net/http"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsDotImports() {
+	// Arrange
+	input := `package test
+
+import . "net/http"
+
+type Requester interface {
+	MakeRequest(r *Request) *Response
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `. "net/http"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsNamedImports() {
+	// Arrange
+	input := `package test
+
+import h "net/http"
+
+type Requester interface {
+	MakeRequest(r *h.Request) *h.Response
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `h "net/http"`)
+}
+
+// TODO: add a test for maps with complex types
+// TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)
+// TODO: add a test for types from the same package as the mock
+// TODO: what about empty interfaces? Return a warning?
+
+func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]*parser.MockedInterface, error) {
 	tmpDir, err := os.MkdirTemp("", "kelpie-parser-tests")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir for module")
@@ -291,8 +363,6 @@ go 1.22.1`); err != nil {
 
 	return parser.Parse("github.com/adamconnelly/kelpie-test/"+packageName, tmpDir, filter)
 }
-
-// TODO: what about empty interfaces? Return a warning?
 
 func TestParser(t *testing.T) {
 	suite.Run(t, new(ParserTests))
