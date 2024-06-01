@@ -85,7 +85,7 @@ type NotificationService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	notificationService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
+	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
 		return mock.Name == "NotificationService"
 	})
 	t.Equal("notificationservice", notificationService.PackageName)
@@ -135,7 +135,7 @@ type NotificationService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	notificationService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
+	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
 		return mock.Name == "NotificationService"
 	})
 	t.Equal("notificationservice", notificationService.PackageName)
@@ -167,7 +167,7 @@ type AlarmService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	alarmService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
+	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
 		return mock.Name == "AlarmService"
 	})
 	t.Equal("alarmservice", alarmService.PackageName)
@@ -201,7 +201,7 @@ type AlarmService interface {
 	t.NoError(err)
 	t.Len(result, 1)
 
-	alarmService := slices.FirstOrPanic(result, func(mock *parser.MockedInterface) bool {
+	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
 		return mock.Name == "AlarmService"
 	})
 
@@ -328,7 +328,7 @@ type Requester interface {
 // TODO: add a test for types from the same package as the mock
 // TODO: what about empty interfaces? Return a warning?
 
-func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]*parser.MockedInterface, error) {
+func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]parser.MockedInterface, error) {
 	tmpDir, err := os.MkdirTemp("", "kelpie-parser-tests")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create temp dir for module")
