@@ -3,29 +3,29 @@ package userrepository
 
 import (
 	"github.com/adamconnelly/kelpie"
-	"github.com/adamconnelly/kelpie/mocking"
 	"github.com/adamconnelly/kelpie/examples/users"
+	"github.com/adamconnelly/kelpie/mocking"
 )
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
-func (m *Instance) FindUserByUsername(username string) (r0 *users.User, r1 error) {
+func (m *instance) FindUserByUsername(username string) (r0 *users.User, r1 error) {
 	expectation := m.mock.Call("FindUserByUsername", username)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -49,7 +49,7 @@ func (m *Instance) FindUserByUsername(username string) (r0 *users.User, r1 error
 	return
 }
 
-func (m *Instance) GetAllUsersOfType(t users.UserType) (r0 []users.User, r1 error) {
+func (m *instance) GetAllUsersOfType(t users.UserType) (r0 []users.User, r1 error) {
 	expectation := m.mock.Call("GetAllUsersOfType", t)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -73,20 +73,20 @@ func (m *Instance) GetAllUsersOfType(t users.UserType) (r0 []users.User, r1 erro
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type FindUserByUsernameMethodMatcher struct {
+type findUserByUsernameMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *FindUserByUsernameMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *findUserByUsernameMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
-func FindUserByUsername[P0 string | mocking.Matcher[string]](username P0) *FindUserByUsernameMethodMatcher {
-	result := FindUserByUsernameMethodMatcher{
+func FindUserByUsername[P0 string | mocking.Matcher[string]](username P0) *findUserByUsernameMethodMatcher {
+	result := findUserByUsernameMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "FindUserByUsername",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -102,33 +102,33 @@ func FindUserByUsername[P0 string | mocking.Matcher[string]](username P0) *FindU
 	return &result
 }
 
-type FindUserByUsernameTimes struct {
-	matcher *FindUserByUsernameMethodMatcher
+type findUserByUsernameTimes struct {
+	matcher *findUserByUsernameMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *FindUserByUsernameMethodMatcher) Times(times uint) *FindUserByUsernameTimes {
+func (m *findUserByUsernameMethodMatcher) Times(times uint) *findUserByUsernameTimes {
 	m.matcher.Times = &times
 
-	return &FindUserByUsernameTimes{
+	return &findUserByUsernameTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *FindUserByUsernameMethodMatcher) Once() *FindUserByUsernameTimes {
+func (m *findUserByUsernameMethodMatcher) Once() *findUserByUsernameTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *FindUserByUsernameMethodMatcher) Never() *FindUserByUsernameTimes {
+func (m *findUserByUsernameMethodMatcher) Never() *findUserByUsernameTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *FindUserByUsernameTimes) Return(r0 *users.User, r1 error) *FindUserByUsernameAction {
-	return &FindUserByUsernameAction{
+func (t *findUserByUsernameTimes) Return(r0 *users.User, r1 error) *findUserByUsernameAction {
+	return &findUserByUsernameAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0, r1},
@@ -137,8 +137,8 @@ func (t *FindUserByUsernameTimes) Return(r0 *users.User, r1 error) *FindUserByUs
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *FindUserByUsernameTimes) Panic(arg any) *FindUserByUsernameAction {
-	return &FindUserByUsernameAction{
+func (t *findUserByUsernameTimes) Panic(arg any) *findUserByUsernameAction {
+	return &findUserByUsernameAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -147,8 +147,8 @@ func (t *FindUserByUsernameTimes) Panic(arg any) *FindUserByUsernameAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *FindUserByUsernameTimes) When(observe func(username string) (*users.User, error)) *FindUserByUsernameAction {
-	return &FindUserByUsernameAction{
+func (t *findUserByUsernameTimes) When(observe func(username string) (*users.User, error)) *findUserByUsernameAction {
+	return &findUserByUsernameAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -156,13 +156,13 @@ func (t *FindUserByUsernameTimes) When(observe func(username string) (*users.Use
 	}
 }
 
-func (t *FindUserByUsernameTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *findUserByUsernameTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *FindUserByUsernameMethodMatcher) Return(r0 *users.User, r1 error) *FindUserByUsernameAction {
-	return &FindUserByUsernameAction{
+func (m *findUserByUsernameMethodMatcher) Return(r0 *users.User, r1 error) *findUserByUsernameAction {
+	return &findUserByUsernameAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0, r1},
@@ -171,8 +171,8 @@ func (m *FindUserByUsernameMethodMatcher) Return(r0 *users.User, r1 error) *Find
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *FindUserByUsernameMethodMatcher) Panic(arg any) *FindUserByUsernameAction {
-	return &FindUserByUsernameAction{
+func (m *findUserByUsernameMethodMatcher) Panic(arg any) *findUserByUsernameAction {
+	return &findUserByUsernameAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -181,8 +181,8 @@ func (m *FindUserByUsernameMethodMatcher) Panic(arg any) *FindUserByUsernameActi
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *FindUserByUsernameMethodMatcher) When(observe func(username string) (*users.User, error)) *FindUserByUsernameAction {
-	return &FindUserByUsernameAction{
+func (m *findUserByUsernameMethodMatcher) When(observe func(username string) (*users.User, error)) *findUserByUsernameAction {
+	return &findUserByUsernameAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -190,24 +190,24 @@ func (m *FindUserByUsernameMethodMatcher) When(observe func(username string) (*u
 	}
 }
 
-type FindUserByUsernameAction struct {
+type findUserByUsernameAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *FindUserByUsernameAction) CreateExpectation() *mocking.Expectation {
+func (a *findUserByUsernameAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
-type GetAllUsersOfTypeMethodMatcher struct {
+type getAllUsersOfTypeMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *GetAllUsersOfTypeMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *getAllUsersOfTypeMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
-func GetAllUsersOfType[P0 users.UserType | mocking.Matcher[users.UserType]](t P0) *GetAllUsersOfTypeMethodMatcher {
-	result := GetAllUsersOfTypeMethodMatcher{
+func GetAllUsersOfType[P0 users.UserType | mocking.Matcher[users.UserType]](t P0) *getAllUsersOfTypeMethodMatcher {
+	result := getAllUsersOfTypeMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "GetAllUsersOfType",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -223,33 +223,33 @@ func GetAllUsersOfType[P0 users.UserType | mocking.Matcher[users.UserType]](t P0
 	return &result
 }
 
-type GetAllUsersOfTypeTimes struct {
-	matcher *GetAllUsersOfTypeMethodMatcher
+type getAllUsersOfTypeTimes struct {
+	matcher *getAllUsersOfTypeMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *GetAllUsersOfTypeMethodMatcher) Times(times uint) *GetAllUsersOfTypeTimes {
+func (m *getAllUsersOfTypeMethodMatcher) Times(times uint) *getAllUsersOfTypeTimes {
 	m.matcher.Times = &times
 
-	return &GetAllUsersOfTypeTimes{
+	return &getAllUsersOfTypeTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *GetAllUsersOfTypeMethodMatcher) Once() *GetAllUsersOfTypeTimes {
+func (m *getAllUsersOfTypeMethodMatcher) Once() *getAllUsersOfTypeTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *GetAllUsersOfTypeMethodMatcher) Never() *GetAllUsersOfTypeTimes {
+func (m *getAllUsersOfTypeMethodMatcher) Never() *getAllUsersOfTypeTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *GetAllUsersOfTypeTimes) Return(r0 []users.User, r1 error) *GetAllUsersOfTypeAction {
-	return &GetAllUsersOfTypeAction{
+func (t *getAllUsersOfTypeTimes) Return(r0 []users.User, r1 error) *getAllUsersOfTypeAction {
+	return &getAllUsersOfTypeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0, r1},
@@ -258,8 +258,8 @@ func (t *GetAllUsersOfTypeTimes) Return(r0 []users.User, r1 error) *GetAllUsersO
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *GetAllUsersOfTypeTimes) Panic(arg any) *GetAllUsersOfTypeAction {
-	return &GetAllUsersOfTypeAction{
+func (t *getAllUsersOfTypeTimes) Panic(arg any) *getAllUsersOfTypeAction {
+	return &getAllUsersOfTypeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -268,8 +268,8 @@ func (t *GetAllUsersOfTypeTimes) Panic(arg any) *GetAllUsersOfTypeAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *GetAllUsersOfTypeTimes) When(observe func(t users.UserType) ([]users.User, error)) *GetAllUsersOfTypeAction {
-	return &GetAllUsersOfTypeAction{
+func (t *getAllUsersOfTypeTimes) When(observe func(t users.UserType) ([]users.User, error)) *getAllUsersOfTypeAction {
+	return &getAllUsersOfTypeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -277,13 +277,13 @@ func (t *GetAllUsersOfTypeTimes) When(observe func(t users.UserType) ([]users.Us
 	}
 }
 
-func (t *GetAllUsersOfTypeTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *getAllUsersOfTypeTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *GetAllUsersOfTypeMethodMatcher) Return(r0 []users.User, r1 error) *GetAllUsersOfTypeAction {
-	return &GetAllUsersOfTypeAction{
+func (m *getAllUsersOfTypeMethodMatcher) Return(r0 []users.User, r1 error) *getAllUsersOfTypeAction {
+	return &getAllUsersOfTypeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0, r1},
@@ -292,8 +292,8 @@ func (m *GetAllUsersOfTypeMethodMatcher) Return(r0 []users.User, r1 error) *GetA
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *GetAllUsersOfTypeMethodMatcher) Panic(arg any) *GetAllUsersOfTypeAction {
-	return &GetAllUsersOfTypeAction{
+func (m *getAllUsersOfTypeMethodMatcher) Panic(arg any) *getAllUsersOfTypeAction {
+	return &getAllUsersOfTypeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -302,8 +302,8 @@ func (m *GetAllUsersOfTypeMethodMatcher) Panic(arg any) *GetAllUsersOfTypeAction
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *GetAllUsersOfTypeMethodMatcher) When(observe func(t users.UserType) ([]users.User, error)) *GetAllUsersOfTypeAction {
-	return &GetAllUsersOfTypeAction{
+func (m *getAllUsersOfTypeMethodMatcher) When(observe func(t users.UserType) ([]users.User, error)) *getAllUsersOfTypeAction {
+	return &getAllUsersOfTypeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -311,10 +311,10 @@ func (m *GetAllUsersOfTypeMethodMatcher) When(observe func(t users.UserType) ([]
 	}
 }
 
-type GetAllUsersOfTypeAction struct {
+type getAllUsersOfTypeAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *GetAllUsersOfTypeAction) CreateExpectation() *mocking.Expectation {
+func (a *getAllUsersOfTypeAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

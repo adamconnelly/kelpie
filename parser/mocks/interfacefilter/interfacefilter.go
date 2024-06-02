@@ -8,25 +8,25 @@ import (
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
 // Include indicates that the specified interface should be included in the set of interfaces
 // to generate.
-func (m *Instance) Include(name string) (r0 bool) {
+func (m *instance) Include(name string) (r0 bool) {
 	expectation := m.mock.Call("Include", name)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -46,22 +46,22 @@ func (m *Instance) Include(name string) (r0 bool) {
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type IncludeMethodMatcher struct {
+type includeMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *IncludeMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *includeMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
 // Include indicates that the specified interface should be included in the set of interfaces
 // to generate.
-func Include[P0 string | mocking.Matcher[string]](name P0) *IncludeMethodMatcher {
-	result := IncludeMethodMatcher{
+func Include[P0 string | mocking.Matcher[string]](name P0) *includeMethodMatcher {
+	result := includeMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "Include",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -77,33 +77,33 @@ func Include[P0 string | mocking.Matcher[string]](name P0) *IncludeMethodMatcher
 	return &result
 }
 
-type IncludeTimes struct {
-	matcher *IncludeMethodMatcher
+type includeTimes struct {
+	matcher *includeMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *IncludeMethodMatcher) Times(times uint) *IncludeTimes {
+func (m *includeMethodMatcher) Times(times uint) *includeTimes {
 	m.matcher.Times = &times
 
-	return &IncludeTimes{
+	return &includeTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *IncludeMethodMatcher) Once() *IncludeTimes {
+func (m *includeMethodMatcher) Once() *includeTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *IncludeMethodMatcher) Never() *IncludeTimes {
+func (m *includeMethodMatcher) Never() *includeTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *IncludeTimes) Return(r0 bool) *IncludeAction {
-	return &IncludeAction{
+func (t *includeTimes) Return(r0 bool) *includeAction {
+	return &includeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
@@ -112,8 +112,8 @@ func (t *IncludeTimes) Return(r0 bool) *IncludeAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *IncludeTimes) Panic(arg any) *IncludeAction {
-	return &IncludeAction{
+func (t *includeTimes) Panic(arg any) *includeAction {
+	return &includeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -122,8 +122,8 @@ func (t *IncludeTimes) Panic(arg any) *IncludeAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *IncludeTimes) When(observe func(name string) bool) *IncludeAction {
-	return &IncludeAction{
+func (t *includeTimes) When(observe func(name string) bool) *includeAction {
+	return &includeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -131,13 +131,13 @@ func (t *IncludeTimes) When(observe func(name string) bool) *IncludeAction {
 	}
 }
 
-func (t *IncludeTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *includeTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *IncludeMethodMatcher) Return(r0 bool) *IncludeAction {
-	return &IncludeAction{
+func (m *includeMethodMatcher) Return(r0 bool) *includeAction {
+	return &includeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0},
@@ -146,8 +146,8 @@ func (m *IncludeMethodMatcher) Return(r0 bool) *IncludeAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *IncludeMethodMatcher) Panic(arg any) *IncludeAction {
-	return &IncludeAction{
+func (m *includeMethodMatcher) Panic(arg any) *includeAction {
+	return &includeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -156,8 +156,8 @@ func (m *IncludeMethodMatcher) Panic(arg any) *IncludeAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *IncludeMethodMatcher) When(observe func(name string) bool) *IncludeAction {
-	return &IncludeAction{
+func (m *includeMethodMatcher) When(observe func(name string) bool) *includeAction {
+	return &includeAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -165,10 +165,10 @@ func (m *IncludeMethodMatcher) When(observe func(name string) bool) *IncludeActi
 	}
 }
 
-type IncludeAction struct {
+type includeAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *IncludeAction) CreateExpectation() *mocking.Expectation {
+func (a *includeAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

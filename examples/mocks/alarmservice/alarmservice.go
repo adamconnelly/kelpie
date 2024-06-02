@@ -8,23 +8,23 @@ import (
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
-func (m *Instance) CreateAlarm(name string) (r0 error) {
+func (m *instance) CreateAlarm(name string) (r0 error) {
 	expectation := m.mock.Call("CreateAlarm", name)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -44,20 +44,20 @@ func (m *Instance) CreateAlarm(name string) (r0 error) {
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type CreateAlarmMethodMatcher struct {
+type createAlarmMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *CreateAlarmMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *createAlarmMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
-func CreateAlarm[P0 string | mocking.Matcher[string]](name P0) *CreateAlarmMethodMatcher {
-	result := CreateAlarmMethodMatcher{
+func CreateAlarm[P0 string | mocking.Matcher[string]](name P0) *createAlarmMethodMatcher {
+	result := createAlarmMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "CreateAlarm",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -73,33 +73,33 @@ func CreateAlarm[P0 string | mocking.Matcher[string]](name P0) *CreateAlarmMetho
 	return &result
 }
 
-type CreateAlarmTimes struct {
-	matcher *CreateAlarmMethodMatcher
+type createAlarmTimes struct {
+	matcher *createAlarmMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *CreateAlarmMethodMatcher) Times(times uint) *CreateAlarmTimes {
+func (m *createAlarmMethodMatcher) Times(times uint) *createAlarmTimes {
 	m.matcher.Times = &times
 
-	return &CreateAlarmTimes{
+	return &createAlarmTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *CreateAlarmMethodMatcher) Once() *CreateAlarmTimes {
+func (m *createAlarmMethodMatcher) Once() *createAlarmTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *CreateAlarmMethodMatcher) Never() *CreateAlarmTimes {
+func (m *createAlarmMethodMatcher) Never() *createAlarmTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *CreateAlarmTimes) Return(r0 error) *CreateAlarmAction {
-	return &CreateAlarmAction{
+func (t *createAlarmTimes) Return(r0 error) *createAlarmAction {
+	return &createAlarmAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
@@ -108,8 +108,8 @@ func (t *CreateAlarmTimes) Return(r0 error) *CreateAlarmAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *CreateAlarmTimes) Panic(arg any) *CreateAlarmAction {
-	return &CreateAlarmAction{
+func (t *createAlarmTimes) Panic(arg any) *createAlarmAction {
+	return &createAlarmAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -118,8 +118,8 @@ func (t *CreateAlarmTimes) Panic(arg any) *CreateAlarmAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *CreateAlarmTimes) When(observe func(name string) error) *CreateAlarmAction {
-	return &CreateAlarmAction{
+func (t *createAlarmTimes) When(observe func(name string) error) *createAlarmAction {
+	return &createAlarmAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -127,13 +127,13 @@ func (t *CreateAlarmTimes) When(observe func(name string) error) *CreateAlarmAct
 	}
 }
 
-func (t *CreateAlarmTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *createAlarmTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *CreateAlarmMethodMatcher) Return(r0 error) *CreateAlarmAction {
-	return &CreateAlarmAction{
+func (m *createAlarmMethodMatcher) Return(r0 error) *createAlarmAction {
+	return &createAlarmAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0},
@@ -142,8 +142,8 @@ func (m *CreateAlarmMethodMatcher) Return(r0 error) *CreateAlarmAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *CreateAlarmMethodMatcher) Panic(arg any) *CreateAlarmAction {
-	return &CreateAlarmAction{
+func (m *createAlarmMethodMatcher) Panic(arg any) *createAlarmAction {
+	return &createAlarmAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -152,8 +152,8 @@ func (m *CreateAlarmMethodMatcher) Panic(arg any) *CreateAlarmAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *CreateAlarmMethodMatcher) When(observe func(name string) error) *CreateAlarmAction {
-	return &CreateAlarmAction{
+func (m *createAlarmMethodMatcher) When(observe func(name string) error) *createAlarmAction {
+	return &createAlarmAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -161,10 +161,10 @@ func (m *CreateAlarmMethodMatcher) When(observe func(name string) error) *Create
 	}
 }
 
-type CreateAlarmAction struct {
+type createAlarmAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *CreateAlarmAction) CreateExpectation() *mocking.Expectation {
+func (a *createAlarmAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

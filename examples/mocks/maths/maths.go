@@ -8,24 +8,24 @@ import (
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
 // Add adds a and b together and returns the result.
-func (m *Instance) Add(a int, b int) (r0 int) {
+func (m *instance) Add(a int, b int) (r0 int) {
 	expectation := m.mock.Call("Add", a, b)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -64,7 +64,7 @@ func (m *Instance) Add(a int, b int) (r0 int) {
 // 0; if the value corresponding to s cannot be represented by a signed integer of the given
 // size, err.Err = ErrRange and the returned value is the maximum magnitude integer of the
 // appropriate bitSize and sign.
-func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
+func (m *instance) ParseInt(input string) (r0 int, r1 error) {
 	expectation := m.mock.Call("ParseInt", input)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -88,21 +88,21 @@ func (m *Instance) ParseInt(input string) (r0 int, r1 error) {
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type AddMethodMatcher struct {
+type addMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *AddMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *addMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
 // Add adds a and b together and returns the result.
-func Add[P0 int | mocking.Matcher[int], P1 int | mocking.Matcher[int]](a P0, b P1) *AddMethodMatcher {
-	result := AddMethodMatcher{
+func Add[P0 int | mocking.Matcher[int], P1 int | mocking.Matcher[int]](a P0, b P1) *addMethodMatcher {
+	result := addMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "Add",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 2),
@@ -124,33 +124,33 @@ func Add[P0 int | mocking.Matcher[int], P1 int | mocking.Matcher[int]](a P0, b P
 	return &result
 }
 
-type AddTimes struct {
-	matcher *AddMethodMatcher
+type addTimes struct {
+	matcher *addMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *AddMethodMatcher) Times(times uint) *AddTimes {
+func (m *addMethodMatcher) Times(times uint) *addTimes {
 	m.matcher.Times = &times
 
-	return &AddTimes{
+	return &addTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *AddMethodMatcher) Once() *AddTimes {
+func (m *addMethodMatcher) Once() *addTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *AddMethodMatcher) Never() *AddTimes {
+func (m *addMethodMatcher) Never() *addTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *AddTimes) Return(r0 int) *AddAction {
-	return &AddAction{
+func (t *addTimes) Return(r0 int) *addAction {
+	return &addAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
@@ -159,8 +159,8 @@ func (t *AddTimes) Return(r0 int) *AddAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *AddTimes) Panic(arg any) *AddAction {
-	return &AddAction{
+func (t *addTimes) Panic(arg any) *addAction {
+	return &addAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -169,8 +169,8 @@ func (t *AddTimes) Panic(arg any) *AddAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *AddTimes) When(observe func(a int, b int) int) *AddAction {
-	return &AddAction{
+func (t *addTimes) When(observe func(a int, b int) int) *addAction {
+	return &addAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -178,13 +178,13 @@ func (t *AddTimes) When(observe func(a int, b int) int) *AddAction {
 	}
 }
 
-func (t *AddTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *addTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *AddMethodMatcher) Return(r0 int) *AddAction {
-	return &AddAction{
+func (m *addMethodMatcher) Return(r0 int) *addAction {
+	return &addAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0},
@@ -193,8 +193,8 @@ func (m *AddMethodMatcher) Return(r0 int) *AddAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *AddMethodMatcher) Panic(arg any) *AddAction {
-	return &AddAction{
+func (m *addMethodMatcher) Panic(arg any) *addAction {
+	return &addAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -203,8 +203,8 @@ func (m *AddMethodMatcher) Panic(arg any) *AddAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *AddMethodMatcher) When(observe func(a int, b int) int) *AddAction {
-	return &AddAction{
+func (m *addMethodMatcher) When(observe func(a int, b int) int) *addAction {
+	return &addAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -212,19 +212,19 @@ func (m *AddMethodMatcher) When(observe func(a int, b int) int) *AddAction {
 	}
 }
 
-type AddAction struct {
+type addAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *AddAction) CreateExpectation() *mocking.Expectation {
+func (a *addAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
-type ParseIntMethodMatcher struct {
+type parseIntMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *ParseIntMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *parseIntMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
@@ -247,8 +247,8 @@ func (m *ParseIntMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 // 0; if the value corresponding to s cannot be represented by a signed integer of the given
 // size, err.Err = ErrRange and the returned value is the maximum magnitude integer of the
 // appropriate bitSize and sign.
-func ParseInt[P0 string | mocking.Matcher[string]](input P0) *ParseIntMethodMatcher {
-	result := ParseIntMethodMatcher{
+func ParseInt[P0 string | mocking.Matcher[string]](input P0) *parseIntMethodMatcher {
+	result := parseIntMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "ParseInt",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -264,33 +264,33 @@ func ParseInt[P0 string | mocking.Matcher[string]](input P0) *ParseIntMethodMatc
 	return &result
 }
 
-type ParseIntTimes struct {
-	matcher *ParseIntMethodMatcher
+type parseIntTimes struct {
+	matcher *parseIntMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *ParseIntMethodMatcher) Times(times uint) *ParseIntTimes {
+func (m *parseIntMethodMatcher) Times(times uint) *parseIntTimes {
 	m.matcher.Times = &times
 
-	return &ParseIntTimes{
+	return &parseIntTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *ParseIntMethodMatcher) Once() *ParseIntTimes {
+func (m *parseIntMethodMatcher) Once() *parseIntTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *ParseIntMethodMatcher) Never() *ParseIntTimes {
+func (m *parseIntMethodMatcher) Never() *parseIntTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *ParseIntTimes) Return(r0 int, r1 error) *ParseIntAction {
-	return &ParseIntAction{
+func (t *parseIntTimes) Return(r0 int, r1 error) *parseIntAction {
+	return &parseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0, r1},
@@ -299,8 +299,8 @@ func (t *ParseIntTimes) Return(r0 int, r1 error) *ParseIntAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *ParseIntTimes) Panic(arg any) *ParseIntAction {
-	return &ParseIntAction{
+func (t *parseIntTimes) Panic(arg any) *parseIntAction {
+	return &parseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -309,8 +309,8 @@ func (t *ParseIntTimes) Panic(arg any) *ParseIntAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *ParseIntTimes) When(observe func(input string) (int, error)) *ParseIntAction {
-	return &ParseIntAction{
+func (t *parseIntTimes) When(observe func(input string) (int, error)) *parseIntAction {
+	return &parseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -318,13 +318,13 @@ func (t *ParseIntTimes) When(observe func(input string) (int, error)) *ParseIntA
 	}
 }
 
-func (t *ParseIntTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *parseIntTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntAction {
-	return &ParseIntAction{
+func (m *parseIntMethodMatcher) Return(r0 int, r1 error) *parseIntAction {
+	return &parseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0, r1},
@@ -333,8 +333,8 @@ func (m *ParseIntMethodMatcher) Return(r0 int, r1 error) *ParseIntAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *ParseIntMethodMatcher) Panic(arg any) *ParseIntAction {
-	return &ParseIntAction{
+func (m *parseIntMethodMatcher) Panic(arg any) *parseIntAction {
+	return &parseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -343,8 +343,8 @@ func (m *ParseIntMethodMatcher) Panic(arg any) *ParseIntAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *ParseIntMethodMatcher) When(observe func(input string) (int, error)) *ParseIntAction {
-	return &ParseIntAction{
+func (m *parseIntMethodMatcher) When(observe func(input string) (int, error)) *parseIntAction {
+	return &parseIntAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -352,10 +352,10 @@ func (m *ParseIntMethodMatcher) When(observe func(input string) (int, error)) *P
 	}
 }
 
-type ParseIntAction struct {
+type parseIntAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *ParseIntAction) CreateExpectation() *mocking.Expectation {
+func (a *parseIntAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

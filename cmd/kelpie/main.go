@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/alecthomas/kong"
 	"github.com/pkg/errors"
@@ -51,6 +53,19 @@ func (g *generateCmd) Run() error {
 
 					return "// " + line
 				}), "\n")
+			},
+			"Unexport": func(name string) string {
+				firstRune, size := utf8.DecodeRuneInString(name)
+				if firstRune == utf8.RuneError && size <= 1 {
+					return name
+				}
+
+				lower := unicode.ToLower(firstRune)
+				if firstRune == lower {
+					return name
+				}
+
+				return string(lower) + name[size:]
 			},
 		}).
 		Parse(mockTemplate))

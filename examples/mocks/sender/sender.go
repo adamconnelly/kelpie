@@ -8,23 +8,23 @@ import (
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
-func (m *Instance) SendMessage(title *string, message string) (r0 error) {
+func (m *instance) SendMessage(title *string, message string) (r0 error) {
 	expectation := m.mock.Call("SendMessage", title, message)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -44,7 +44,7 @@ func (m *Instance) SendMessage(title *string, message string) (r0 error) {
 	return
 }
 
-func (m *Instance) SendMany(details map[string]string) (r0 error) {
+func (m *instance) SendMany(details map[string]string) (r0 error) {
 	expectation := m.mock.Call("SendMany", details)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -64,20 +64,20 @@ func (m *Instance) SendMany(details map[string]string) (r0 error) {
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type SendMessageMethodMatcher struct {
+type sendMessageMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *SendMessageMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *sendMessageMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
-func SendMessage[P0 *string | mocking.Matcher[*string], P1 string | mocking.Matcher[string]](title P0, message P1) *SendMessageMethodMatcher {
-	result := SendMessageMethodMatcher{
+func SendMessage[P0 *string | mocking.Matcher[*string], P1 string | mocking.Matcher[string]](title P0, message P1) *sendMessageMethodMatcher {
+	result := sendMessageMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "SendMessage",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 2),
@@ -99,33 +99,33 @@ func SendMessage[P0 *string | mocking.Matcher[*string], P1 string | mocking.Matc
 	return &result
 }
 
-type SendMessageTimes struct {
-	matcher *SendMessageMethodMatcher
+type sendMessageTimes struct {
+	matcher *sendMessageMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *SendMessageMethodMatcher) Times(times uint) *SendMessageTimes {
+func (m *sendMessageMethodMatcher) Times(times uint) *sendMessageTimes {
 	m.matcher.Times = &times
 
-	return &SendMessageTimes{
+	return &sendMessageTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *SendMessageMethodMatcher) Once() *SendMessageTimes {
+func (m *sendMessageMethodMatcher) Once() *sendMessageTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *SendMessageMethodMatcher) Never() *SendMessageTimes {
+func (m *sendMessageMethodMatcher) Never() *sendMessageTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *SendMessageTimes) Return(r0 error) *SendMessageAction {
-	return &SendMessageAction{
+func (t *sendMessageTimes) Return(r0 error) *sendMessageAction {
+	return &sendMessageAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
@@ -134,8 +134,8 @@ func (t *SendMessageTimes) Return(r0 error) *SendMessageAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *SendMessageTimes) Panic(arg any) *SendMessageAction {
-	return &SendMessageAction{
+func (t *sendMessageTimes) Panic(arg any) *sendMessageAction {
+	return &sendMessageAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -144,8 +144,8 @@ func (t *SendMessageTimes) Panic(arg any) *SendMessageAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *SendMessageTimes) When(observe func(title *string, message string) error) *SendMessageAction {
-	return &SendMessageAction{
+func (t *sendMessageTimes) When(observe func(title *string, message string) error) *sendMessageAction {
+	return &sendMessageAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -153,13 +153,13 @@ func (t *SendMessageTimes) When(observe func(title *string, message string) erro
 	}
 }
 
-func (t *SendMessageTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *sendMessageTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *SendMessageMethodMatcher) Return(r0 error) *SendMessageAction {
-	return &SendMessageAction{
+func (m *sendMessageMethodMatcher) Return(r0 error) *sendMessageAction {
+	return &sendMessageAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0},
@@ -168,8 +168,8 @@ func (m *SendMessageMethodMatcher) Return(r0 error) *SendMessageAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *SendMessageMethodMatcher) Panic(arg any) *SendMessageAction {
-	return &SendMessageAction{
+func (m *sendMessageMethodMatcher) Panic(arg any) *sendMessageAction {
+	return &sendMessageAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -178,8 +178,8 @@ func (m *SendMessageMethodMatcher) Panic(arg any) *SendMessageAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *SendMessageMethodMatcher) When(observe func(title *string, message string) error) *SendMessageAction {
-	return &SendMessageAction{
+func (m *sendMessageMethodMatcher) When(observe func(title *string, message string) error) *sendMessageAction {
+	return &sendMessageAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -187,24 +187,24 @@ func (m *SendMessageMethodMatcher) When(observe func(title *string, message stri
 	}
 }
 
-type SendMessageAction struct {
+type sendMessageAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *SendMessageAction) CreateExpectation() *mocking.Expectation {
+func (a *sendMessageAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
 
-type SendManyMethodMatcher struct {
+type sendManyMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *SendManyMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *sendManyMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
-func SendMany[P0 map[string]string | mocking.Matcher[map[string]string]](details P0) *SendManyMethodMatcher {
-	result := SendManyMethodMatcher{
+func SendMany[P0 map[string]string | mocking.Matcher[map[string]string]](details P0) *sendManyMethodMatcher {
+	result := sendManyMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "SendMany",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -220,33 +220,33 @@ func SendMany[P0 map[string]string | mocking.Matcher[map[string]string]](details
 	return &result
 }
 
-type SendManyTimes struct {
-	matcher *SendManyMethodMatcher
+type sendManyTimes struct {
+	matcher *sendManyMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *SendManyMethodMatcher) Times(times uint) *SendManyTimes {
+func (m *sendManyMethodMatcher) Times(times uint) *sendManyTimes {
 	m.matcher.Times = &times
 
-	return &SendManyTimes{
+	return &sendManyTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *SendManyMethodMatcher) Once() *SendManyTimes {
+func (m *sendManyMethodMatcher) Once() *sendManyTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *SendManyMethodMatcher) Never() *SendManyTimes {
+func (m *sendManyMethodMatcher) Never() *sendManyTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *SendManyTimes) Return(r0 error) *SendManyAction {
-	return &SendManyAction{
+func (t *sendManyTimes) Return(r0 error) *sendManyAction {
+	return &sendManyAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
@@ -255,8 +255,8 @@ func (t *SendManyTimes) Return(r0 error) *SendManyAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *SendManyTimes) Panic(arg any) *SendManyAction {
-	return &SendManyAction{
+func (t *sendManyTimes) Panic(arg any) *sendManyAction {
+	return &sendManyAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -265,8 +265,8 @@ func (t *SendManyTimes) Panic(arg any) *SendManyAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *SendManyTimes) When(observe func(details map[string]string) error) *SendManyAction {
-	return &SendManyAction{
+func (t *sendManyTimes) When(observe func(details map[string]string) error) *sendManyAction {
+	return &sendManyAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -274,13 +274,13 @@ func (t *SendManyTimes) When(observe func(details map[string]string) error) *Sen
 	}
 }
 
-func (t *SendManyTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *sendManyTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *SendManyMethodMatcher) Return(r0 error) *SendManyAction {
-	return &SendManyAction{
+func (m *sendManyMethodMatcher) Return(r0 error) *sendManyAction {
+	return &sendManyAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0},
@@ -289,8 +289,8 @@ func (m *SendManyMethodMatcher) Return(r0 error) *SendManyAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *SendManyMethodMatcher) Panic(arg any) *SendManyAction {
-	return &SendManyAction{
+func (m *sendManyMethodMatcher) Panic(arg any) *sendManyAction {
+	return &sendManyAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -299,8 +299,8 @@ func (m *SendManyMethodMatcher) Panic(arg any) *SendManyAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *SendManyMethodMatcher) When(observe func(details map[string]string) error) *SendManyAction {
-	return &SendManyAction{
+func (m *sendManyMethodMatcher) When(observe func(details map[string]string) error) *sendManyAction {
+	return &sendManyAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -308,10 +308,10 @@ func (m *SendManyMethodMatcher) When(observe func(details map[string]string) err
 	}
 }
 
-type SendManyAction struct {
+type sendManyAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *SendManyAction) CreateExpectation() *mocking.Expectation {
+func (a *sendManyAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

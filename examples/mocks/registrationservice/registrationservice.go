@@ -8,24 +8,24 @@ import (
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
 // Register registers the item with the specified name.
-func (m *Instance) Register(name string) (r0 error) {
+func (m *instance) Register(name string) (r0 error) {
 	expectation := m.mock.Call("Register", name)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -45,21 +45,21 @@ func (m *Instance) Register(name string) (r0 error) {
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type RegisterMethodMatcher struct {
+type registerMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *RegisterMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *registerMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
 // Register registers the item with the specified name.
-func Register[P0 string | mocking.Matcher[string]](name P0) *RegisterMethodMatcher {
-	result := RegisterMethodMatcher{
+func Register[P0 string | mocking.Matcher[string]](name P0) *registerMethodMatcher {
+	result := registerMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "Register",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -75,33 +75,33 @@ func Register[P0 string | mocking.Matcher[string]](name P0) *RegisterMethodMatch
 	return &result
 }
 
-type RegisterTimes struct {
-	matcher *RegisterMethodMatcher
+type registerTimes struct {
+	matcher *registerMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *RegisterMethodMatcher) Times(times uint) *RegisterTimes {
+func (m *registerMethodMatcher) Times(times uint) *registerTimes {
 	m.matcher.Times = &times
 
-	return &RegisterTimes{
+	return &registerTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *RegisterMethodMatcher) Once() *RegisterTimes {
+func (m *registerMethodMatcher) Once() *registerTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *RegisterMethodMatcher) Never() *RegisterTimes {
+func (m *registerMethodMatcher) Never() *registerTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *RegisterTimes) Return(r0 error) *RegisterAction {
-	return &RegisterAction{
+func (t *registerTimes) Return(r0 error) *registerAction {
+	return &registerAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{r0},
@@ -110,8 +110,8 @@ func (t *RegisterTimes) Return(r0 error) *RegisterAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *RegisterTimes) Panic(arg any) *RegisterAction {
-	return &RegisterAction{
+func (t *registerTimes) Panic(arg any) *registerAction {
+	return &registerAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -120,8 +120,8 @@ func (t *RegisterTimes) Panic(arg any) *RegisterAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *RegisterTimes) When(observe func(name string) error) *RegisterAction {
-	return &RegisterAction{
+func (t *registerTimes) When(observe func(name string) error) *registerAction {
+	return &registerAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -129,13 +129,13 @@ func (t *RegisterTimes) When(observe func(name string) error) *RegisterAction {
 	}
 }
 
-func (t *RegisterTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *registerTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *RegisterMethodMatcher) Return(r0 error) *RegisterAction {
-	return &RegisterAction{
+func (m *registerMethodMatcher) Return(r0 error) *registerAction {
+	return &registerAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{r0},
@@ -144,8 +144,8 @@ func (m *RegisterMethodMatcher) Return(r0 error) *RegisterAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *RegisterMethodMatcher) Panic(arg any) *RegisterAction {
-	return &RegisterAction{
+func (m *registerMethodMatcher) Panic(arg any) *registerAction {
+	return &registerAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -154,8 +154,8 @@ func (m *RegisterMethodMatcher) Panic(arg any) *RegisterAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *RegisterMethodMatcher) When(observe func(name string) error) *RegisterAction {
-	return &RegisterAction{
+func (m *registerMethodMatcher) When(observe func(name string) error) *registerAction {
+	return &registerAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -163,10 +163,10 @@ func (m *RegisterMethodMatcher) When(observe func(name string) error) *RegisterA
 	}
 }
 
-type RegisterAction struct {
+type registerAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *RegisterAction) CreateExpectation() *mocking.Expectation {
+func (a *registerAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
