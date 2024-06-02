@@ -8,23 +8,23 @@ import (
 
 type Mock struct {
 	mocking.Mock
-	instance Instance
+	instance instance
 }
 
 func NewMock() *Mock {
 	mock := Mock{
-		instance: Instance{},
+		instance: instance{},
 	}
 	mock.instance.mock = &mock
 
 	return &mock
 }
 
-type Instance struct {
+type instance struct {
 	mock *Mock
 }
 
-func (m *Instance) Read(p []byte) (n int, err error) {
+func (m *instance) Read(p []byte) (n int, err error) {
 	expectation := m.mock.Call("Read", p)
 	if expectation != nil {
 		if expectation.ObserveFn != nil {
@@ -48,20 +48,20 @@ func (m *Instance) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (m *Mock) Instance() *Instance {
+func (m *Mock) Instance() *instance {
 	return &m.instance
 }
 
-type ReadMethodMatcher struct {
+type readMethodMatcher struct {
 	matcher mocking.MethodMatcher
 }
 
-func (m *ReadMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+func (m *readMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &m.matcher
 }
 
-func Read[P0 []byte | mocking.Matcher[[]byte]](p P0) *ReadMethodMatcher {
-	result := ReadMethodMatcher{
+func Read[P0 []byte | mocking.Matcher[[]byte]](p P0) *readMethodMatcher {
+	result := readMethodMatcher{
 		matcher: mocking.MethodMatcher{
 			MethodName:       "Read",
 			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
@@ -77,33 +77,33 @@ func Read[P0 []byte | mocking.Matcher[[]byte]](p P0) *ReadMethodMatcher {
 	return &result
 }
 
-type ReadTimes struct {
-	matcher *ReadMethodMatcher
+type readTimes struct {
+	matcher *readMethodMatcher
 }
 
 // Times allows you to restrict the number of times a particular expectation can be matched.
-func (m *ReadMethodMatcher) Times(times uint) *ReadTimes {
+func (m *readMethodMatcher) Times(times uint) *readTimes {
 	m.matcher.Times = &times
 
-	return &ReadTimes{
+	return &readTimes{
 		matcher: m,
 	}
 }
 
 // Once specifies that the expectation will only match once.
-func (m *ReadMethodMatcher) Once() *ReadTimes {
+func (m *readMethodMatcher) Once() *readTimes {
 	return m.Times(1)
 }
 
 // Never specifies that the method has not been called. This is mainly useful for verification
 // rather than mocking.
-func (m *ReadMethodMatcher) Never() *ReadTimes {
+func (m *readMethodMatcher) Never() *readTimes {
 	return m.Times(0)
 }
 
 // Return returns the specified results when the method is called.
-func (t *ReadTimes) Return(n int, err error) *ReadAction {
-	return &ReadAction{
+func (t *readTimes) Return(n int, err error) *readAction {
+	return &readAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			Returns:       []any{n, err},
@@ -112,8 +112,8 @@ func (t *ReadTimes) Return(n int, err error) *ReadAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (t *ReadTimes) Panic(arg any) *ReadAction {
-	return &ReadAction{
+func (t *readTimes) Panic(arg any) *readAction {
+	return &readAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			PanicArg:      arg,
@@ -122,8 +122,8 @@ func (t *ReadTimes) Panic(arg any) *ReadAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (t *ReadTimes) When(observe func(p []byte) (int, error)) *ReadAction {
-	return &ReadAction{
+func (t *readTimes) When(observe func(p []byte) (int, error)) *readAction {
+	return &readAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &t.matcher.matcher,
 			ObserveFn:     observe,
@@ -131,13 +131,13 @@ func (t *ReadTimes) When(observe func(p []byte) (int, error)) *ReadAction {
 	}
 }
 
-func (t *ReadTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+func (t *readTimes) CreateMethodMatcher() *mocking.MethodMatcher {
 	return &t.matcher.matcher
 }
 
 // Return returns the specified results when the method is called.
-func (m *ReadMethodMatcher) Return(n int, err error) *ReadAction {
-	return &ReadAction{
+func (m *readMethodMatcher) Return(n int, err error) *readAction {
+	return &readAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			Returns:       []any{n, err},
@@ -146,8 +146,8 @@ func (m *ReadMethodMatcher) Return(n int, err error) *ReadAction {
 }
 
 // Panic panics using the specified argument when the method is called.
-func (m *ReadMethodMatcher) Panic(arg any) *ReadAction {
-	return &ReadAction{
+func (m *readMethodMatcher) Panic(arg any) *readAction {
+	return &readAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			PanicArg:      arg,
@@ -156,8 +156,8 @@ func (m *ReadMethodMatcher) Panic(arg any) *ReadAction {
 }
 
 // When calls the specified observe callback when the method is called.
-func (m *ReadMethodMatcher) When(observe func(p []byte) (int, error)) *ReadAction {
-	return &ReadAction{
+func (m *readMethodMatcher) When(observe func(p []byte) (int, error)) *readAction {
+	return &readAction{
 		expectation: mocking.Expectation{
 			MethodMatcher: &m.matcher,
 			ObserveFn:     observe,
@@ -165,10 +165,10 @@ func (m *ReadMethodMatcher) When(observe func(p []byte) (int, error)) *ReadActio
 	}
 }
 
-type ReadAction struct {
+type readAction struct {
 	expectation mocking.Expectation
 }
 
-func (a *ReadAction) CreateExpectation() *mocking.Expectation {
+func (a *readAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }
