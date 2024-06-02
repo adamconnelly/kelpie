@@ -12,7 +12,6 @@ The following is a list of known-outstanding features:
 
 - [ ] Generating mocks for external (i.e. not in your source tree) interfaces by name.
 - [ ] Generating mocks for inline interfaces in structs.
-- [ ] Support for types that require imports.
 
 ## Quickstart
 

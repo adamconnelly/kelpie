@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 
+	"golang.org/x/tools/go/packages"
+
 	kslices "github.com/adamconnelly/kelpie/slices"
 )
 
@@ -17,7 +19,7 @@ type importHelper struct {
 	requiredImports       []string
 }
 
-func newImportHelper(typesInfo *types.Info, importSpecs []*ast.ImportSpec) *importHelper {
+func newImportHelper(typesInfo *types.Info, importSpecs []*ast.ImportSpec, p *packages.Package) *importHelper {
 	if typesInfo == nil {
 		panic("typesInfo cannot be nil")
 	}
@@ -38,6 +40,9 @@ func newImportHelper(typesInfo *types.Info, importSpecs []*ast.ImportSpec) *impo
 			packageNamesToImports[packageName] = i.Path.Value
 		}
 	}
+
+	// Add a special mapping for the package being parsed to resolve local types
+	packageNamesToImports[p.PkgPath] = `"` + p.PkgPath + `"`
 
 	return &importHelper{
 		typesInfo:             typesInfo,

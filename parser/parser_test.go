@@ -369,8 +369,42 @@ type Tracer interface {
 	t.Contains(tracer.Imports, `"time"`)
 }
 
+func (t *ParserTests) Test_Parse_SupportsTypesFromSamePackage() {
+	// Arrange
+	input := `package users
+
+type UserType int
+
+type User struct {
+	ID   uint
+	Name string
+	Type UserType
+}
+
+type UserService interface {
+	FindUser(id uint) (*User, error)
+	GetAllUsersOfType(t UserType) ([]*User, error)
+}`
+
+	// Act
+	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+
+	findUser := slices.FirstOrPanic(requester.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUser" })
+	t.Equal("*users.User", findUser.Results[0].Type)
+
+	getAllUsersOfType := slices.FirstOrPanic(requester.Methods, func(m parser.MethodDefinition) bool { return m.Name == "GetAllUsersOfType" })
+	t.Equal("[]*users.User", getAllUsersOfType.Results[0].Type)
+
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `"github.com/adamconnelly/kelpie-test/users"`)
+}
+
 // TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)
-// TODO: add a test for types from the same package as the mock
 // TODO: what about empty interfaces? Return a warning?
 
 func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]parser.MockedInterface, error) {

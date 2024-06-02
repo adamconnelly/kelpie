@@ -88,7 +88,7 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 	var interfaces []MockedInterface
 
 	pkgs, err := packages.Load(&packages.Config{
-		Mode:  packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo,
+		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo,
 		Dir:   directory,
 		Tests: true,
 	}, "pattern="+packageName)
@@ -103,7 +103,7 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 					if t.Name.IsExported() {
 						if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
 							if filter.Include(t.Name.Name) {
-								importHelper := newImportHelper(p.TypesInfo, fileNode.Imports)
+								importHelper := newImportHelper(p.TypesInfo, fileNode.Imports, p)
 								mockedInterface := MockedInterface{
 									Name:        t.Name.Name,
 									PackageName: strings.ToLower(t.Name.Name),
@@ -122,7 +122,7 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 										for _, paramName := range param.Names {
 											methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
 												Name: paramName.Name,
-												Type: getTypeName(param.Type),
+												Type: getTypeName(param.Type, p),
 											})
 										}
 
@@ -135,12 +135,12 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 												for _, resultName := range result.Names {
 													methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
 														Name: resultName.Name,
-														Type: getTypeName(result.Type),
+														Type: getTypeName(result.Type, p),
 													})
 												}
 											} else {
 												methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-													Type: getTypeName(result.Type),
+													Type: getTypeName(result.Type, p),
 												})
 											}
 
@@ -167,21 +167,36 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 	return interfaces, nil
 }
 
-func getTypeName(e ast.Expr) string {
+func getTypeName(e ast.Expr, p *packages.Package) string {
 	switch n := e.(type) {
 	case *ast.Ident:
+		// Check if this is a type rather than, for example, a package name.
+		if _, ok := p.TypesInfo.Types[e]; ok {
+			if use, ok := p.TypesInfo.Uses[n]; ok {
+				typePackage := use.Pkg()
+				if typePackage != nil && typePackage.Path() == p.PkgPath {
+					// If the type's package matches the package we're parsing, this is a reference
+					// to a type in the same package. We'll need to adjust the type name to include
+					// the package name so that it can be referenced correctly from the package
+					// generated for the mock.
+					return p.Name + "." + n.Name
+				}
+			}
+		}
+
 		return n.Name
 	case *ast.ArrayType:
-		return "[]" + n.Elt.(*ast.Ident).Name
+		elementType := getTypeName(n.Elt, p)
+		return "[]" + elementType
 	case *ast.StarExpr:
-		return "*" + getTypeName(n.X)
+		return "*" + getTypeName(n.X, p)
 	case *ast.SelectorExpr:
-		packageName := getTypeName(n.X)
+		packageName := getTypeName(n.X, p)
 
 		return packageName + "." + n.Sel.Name
 	case *ast.MapType:
-		keyType := getTypeName(n.Key)
-		valueType := getTypeName(n.Value)
+		keyType := getTypeName(n.Key, p)
+		valueType := getTypeName(n.Value, p)
 
 		return "map[" + keyType + "]" + valueType
 	}
