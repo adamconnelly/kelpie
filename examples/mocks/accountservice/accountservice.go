@@ -81,6 +81,26 @@ func (m *Instance) DisabledAccountIDs() (r0 []uint) {
 	return
 }
 
+func (m *Instance) DisableReasons() (r0 map[uint]string) {
+	expectation := m.mock.Call("DisableReasons")
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func() map[uint]string)
+			return observe()
+		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(map[uint]string)
+		}
+	}
+
+	return
+}
+
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
@@ -419,5 +439,120 @@ type DisabledAccountIDsAction struct {
 }
 
 func (a *DisabledAccountIDsAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+type DisableReasonsMethodMatcher struct {
+	matcher mocking.MethodMatcher
+}
+
+func (m *DisableReasonsMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &m.matcher
+}
+
+func DisableReasons() *DisableReasonsMethodMatcher {
+	result := DisableReasonsMethodMatcher{
+		matcher: mocking.MethodMatcher{
+			MethodName:       "DisableReasons",
+			ArgumentMatchers: make([]mocking.ArgumentMatcher, 0),
+		},
+	}
+
+	return &result
+}
+
+type DisableReasonsTimes struct {
+	matcher *DisableReasonsMethodMatcher
+}
+
+// Times allows you to restrict the number of times a particular expectation can be matched.
+func (m *DisableReasonsMethodMatcher) Times(times uint) *DisableReasonsTimes {
+	m.matcher.Times = &times
+
+	return &DisableReasonsTimes{
+		matcher: m,
+	}
+}
+
+// Once specifies that the expectation will only match once.
+func (m *DisableReasonsMethodMatcher) Once() *DisableReasonsTimes {
+	return m.Times(1)
+}
+
+// Never specifies that the method has not been called. This is mainly useful for verification
+// rather than mocking.
+func (m *DisableReasonsMethodMatcher) Never() *DisableReasonsTimes {
+	return m.Times(0)
+}
+
+// Return returns the specified results when the method is called.
+func (t *DisableReasonsTimes) Return(r0 map[uint]string) *DisableReasonsAction {
+	return &DisableReasonsAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (t *DisableReasonsTimes) Panic(arg any) *DisableReasonsAction {
+	return &DisableReasonsAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (t *DisableReasonsTimes) When(observe func() map[uint]string) *DisableReasonsAction {
+	return &DisableReasonsAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+func (t *DisableReasonsTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &t.matcher.matcher
+}
+
+// Return returns the specified results when the method is called.
+func (m *DisableReasonsMethodMatcher) Return(r0 map[uint]string) *DisableReasonsAction {
+	return &DisableReasonsAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (m *DisableReasonsMethodMatcher) Panic(arg any) *DisableReasonsAction {
+	return &DisableReasonsAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (m *DisableReasonsMethodMatcher) When(observe func() map[uint]string) *DisableReasonsAction {
+	return &DisableReasonsAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+type DisableReasonsAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *DisableReasonsAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

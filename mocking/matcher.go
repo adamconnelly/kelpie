@@ -7,7 +7,7 @@ type ArgumentMatcher interface {
 }
 
 // Matcher is used to match an argument in a method invocation.
-type Matcher[T comparable] struct {
+type Matcher[T any] struct {
 	MatchFn func(input T) bool
 }
 

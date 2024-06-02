@@ -40,6 +40,7 @@ type Maths interface {
 //go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces Sender
 type Sender interface {
 	SendMessage(title *string, message string) error
+	SendMany(details map[string]string) error
 }
 
 type ArgumentMatchingTests struct {
@@ -108,6 +109,23 @@ func (t *ArgumentMatchingTests) Test_CanMatchNil() {
 
 	// Assert
 	t.ErrorContains(err, "the way is shut")
+}
+
+func (t *ArgumentMatchingTests) Test_CanMatchMaps() {
+	// Arrange
+	mock := sender.NewMock()
+	mock.Setup(sender.SendMany(kelpie.Match(func(d map[string]string) bool {
+		_, ok := d["blocked@somewhere.com"]
+		return ok
+	})).Return(errors.New("cannot send to that person!")))
+
+	// Act
+	blockedResult := mock.Instance().SendMany(map[string]string{"blocked@somewhere.com": "Hey!"})
+	successResult := mock.Instance().SendMany(map[string]string{"person@somewhere.com": "Hey there!"})
+
+	// Assert
+	t.ErrorContains(blockedResult, "cannot send to that person!")
+	t.NoError(successResult)
 }
 
 func TestArgumentMatching(t *testing.T) {

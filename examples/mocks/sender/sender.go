@@ -44,6 +44,26 @@ func (m *Instance) SendMessage(title *string, message string) (r0 error) {
 	return
 }
 
+func (m *Instance) SendMany(details map[string]string) (r0 error) {
+	expectation := m.mock.Call("SendMany", details)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(details map[string]string) error)
+			return observe(details)
+		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(error)
+		}
+	}
+
+	return
+}
+
 func (m *Mock) Instance() *Instance {
 	return &m.instance
 }
@@ -172,5 +192,126 @@ type SendMessageAction struct {
 }
 
 func (a *SendMessageAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+type SendManyMethodMatcher struct {
+	matcher mocking.MethodMatcher
+}
+
+func (m *SendManyMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &m.matcher
+}
+
+func SendMany[P0 map[string]string | mocking.Matcher[map[string]string]](details P0) *SendManyMethodMatcher {
+	result := SendManyMethodMatcher{
+		matcher: mocking.MethodMatcher{
+			MethodName:       "SendMany",
+			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
+		},
+	}
+
+	if matcher, ok := any(details).(mocking.Matcher[map[string]string]); ok {
+		result.matcher.ArgumentMatchers[0] = matcher
+	} else {
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(details).(map[string]string))
+	}
+
+	return &result
+}
+
+type SendManyTimes struct {
+	matcher *SendManyMethodMatcher
+}
+
+// Times allows you to restrict the number of times a particular expectation can be matched.
+func (m *SendManyMethodMatcher) Times(times uint) *SendManyTimes {
+	m.matcher.Times = &times
+
+	return &SendManyTimes{
+		matcher: m,
+	}
+}
+
+// Once specifies that the expectation will only match once.
+func (m *SendManyMethodMatcher) Once() *SendManyTimes {
+	return m.Times(1)
+}
+
+// Never specifies that the method has not been called. This is mainly useful for verification
+// rather than mocking.
+func (m *SendManyMethodMatcher) Never() *SendManyTimes {
+	return m.Times(0)
+}
+
+// Return returns the specified results when the method is called.
+func (t *SendManyTimes) Return(r0 error) *SendManyAction {
+	return &SendManyAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (t *SendManyTimes) Panic(arg any) *SendManyAction {
+	return &SendManyAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (t *SendManyTimes) When(observe func(details map[string]string) error) *SendManyAction {
+	return &SendManyAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+func (t *SendManyTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &t.matcher.matcher
+}
+
+// Return returns the specified results when the method is called.
+func (m *SendManyMethodMatcher) Return(r0 error) *SendManyAction {
+	return &SendManyAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (m *SendManyMethodMatcher) Panic(arg any) *SendManyAction {
+	return &SendManyAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (m *SendManyMethodMatcher) When(observe func(details map[string]string) error) *SendManyAction {
+	return &SendManyAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+type SendManyAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *SendManyAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

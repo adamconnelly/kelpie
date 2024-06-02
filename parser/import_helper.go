@@ -95,6 +95,9 @@ func (i *importHelper) getPackageIdentifiers(e ast.Expr) []*ast.Ident {
 		identifiers = append(identifiers, i.getPackageIdentifiers(n.X)...)
 	case *ast.SelectorExpr:
 		identifiers = append(identifiers, i.getPackageIdentifiers(n.X)...)
+	case *ast.MapType:
+		identifiers = append(identifiers, i.getPackageIdentifiers(n.Key)...)
+		identifiers = append(identifiers, i.getPackageIdentifiers(n.Value)...)
 	default:
 		panic(fmt.Sprintf("Could not get package identifier from ast expression: %v. This is a bug in Kelpie!", e))
 	}

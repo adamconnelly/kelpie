@@ -323,7 +323,52 @@ type Requester interface {
 	t.Contains(requester.Imports, `h "net/http"`)
 }
 
-// TODO: add a test for maps with complex types
+func (t *ParserTests) Test_Parse_SupportsMaps() {
+	// Arrange
+	input := `package test
+
+import (
+	"io"
+	"time"
+)
+
+type Updater interface {
+	Update(values map[string]io.Reader)
+	Values(name string) map[string]io.Reader
+}
+
+type Tracer interface {
+	Traces() map[time.Time]int
+}`
+
+	// Act
+	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	updater := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "Updater" })
+
+	update := slices.FirstOrPanic(updater.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Update" })
+	valuesParam := slices.FirstOrPanic(update.Parameters, func(p parser.ParameterDefinition) bool { return p.Name == "values" })
+	t.Equal("map[string]io.Reader", valuesParam.Type)
+
+	values := slices.FirstOrPanic(updater.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Values" })
+	valuesResult := values.Results[0]
+	t.Equal("map[string]io.Reader", valuesResult.Type)
+
+	t.Len(updater.Imports, 1)
+	t.Contains(updater.Imports, `"io"`)
+
+	tracer := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "Tracer" })
+	traces := slices.FirstOrPanic(tracer.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Traces" })
+	tracesResult := traces.Results[0]
+	t.Equal("map[time.Time]int", tracesResult.Type)
+
+	t.Len(tracer.Imports, 1)
+	t.Contains(tracer.Imports, `"time"`)
+}
+
 // TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)
 // TODO: add a test for types from the same package as the mock
 // TODO: what about empty interfaces? Return a warning?

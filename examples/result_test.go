@@ -13,6 +13,7 @@ type AccountService interface {
 	SendActivationEmail(emailAddress string) bool
 	DisableAccount(id uint)
 	DisabledAccountIDs() []uint
+	DisableReasons() map[uint]string
 }
 
 type ResultTests struct {
@@ -81,6 +82,20 @@ func (t *ResultTests) Test_CanMockMethodsWithNoArgs() {
 
 	// Assert
 	t.Equal([]uint{1, 2, 3}, result)
+}
+
+func (t *ResultTests) Test_CanReturnMaps() {
+	// Arrange
+	mock := accountservice.NewMock()
+	mock.Setup(accountservice.DisableReasons().Return(map[uint]string{1: "Breached usage policy", 3: "Doesn't like unicorns"}))
+
+	// Act
+	result := mock.Instance().DisableReasons()
+
+	// Assert
+	t.Len(result, 2)
+	t.Equal("Breached usage policy", result[1])
+	t.Equal("Doesn't like unicorns", result[3])
 }
 
 func TestResults(t *testing.T) {

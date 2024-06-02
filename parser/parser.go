@@ -179,6 +179,11 @@ func getTypeName(e ast.Expr) string {
 		packageName := getTypeName(n.X)
 
 		return packageName + "." + n.Sel.Name
+	case *ast.MapType:
+		keyType := getTypeName(n.Key)
+		valueType := getTypeName(n.Value)
+
+		return "map[" + keyType + "]" + valueType
 	}
 
 	panic(fmt.Sprintf("Unknown type %v. This is a bug in Kelpie!", e))
