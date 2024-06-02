@@ -404,6 +404,121 @@ type UserService interface {
 	t.Contains(requester.Imports, `"github.com/adamconnelly/kelpie-test/users"`)
 }
 
+func (t *ParserTests) Test_Parse_SupportsFunctionsInParameters() {
+	// Arrange
+	input := `package users
+
+type User struct {}
+
+type UserService interface {
+	UpdateUsers(callback func(id int, user User)) error
+}`
+
+	// Act
+	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	userService := result[0]
+
+	updateUsers := slices.FirstOrPanic(userService.Methods, func(m parser.MethodDefinition) bool { return m.Name == "UpdateUsers" })
+	t.Equal("callback", updateUsers.Parameters[0].Name)
+	t.Equal("func(id int, user users.User)", updateUsers.Parameters[0].Type)
+
+	t.Len(userService.Imports, 1)
+	t.Contains(userService.Imports, `"github.com/adamconnelly/kelpie-test/users"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsNamelessParameters() {
+	// Arrange
+	input := `package users
+
+type UserType int
+
+type User struct {}
+
+type UserService interface {
+	FindUser(int, UserType) (*User, error)
+}`
+
+	// Act
+	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	userService := result[0]
+
+	findUser := slices.FirstOrPanic(userService.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUser" })
+	t.Equal("_p0", findUser.Parameters[0].Name)
+	t.Equal("int", findUser.Parameters[0].Type)
+
+	t.Equal("_p1", findUser.Parameters[1].Name)
+	t.Equal("users.UserType", findUser.Parameters[1].Type)
+}
+
+func (t *ParserTests) Test_Parse_SupportsFunctionsInResults() {
+	// Arrange
+	input := `package users
+
+type User struct {}
+
+type UserService interface {
+	GetUserFn() func (id int) (*User, error)
+}`
+
+	// Act
+	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	userService := result[0]
+
+	updateUserFn := slices.FirstOrPanic(userService.Methods, func(m parser.MethodDefinition) bool { return m.Name == "GetUserFn" })
+	t.Equal("", updateUserFn.Results[0].Name)
+	t.Equal("func(id int) (*users.User, error)", updateUserFn.Results[0].Type)
+
+	t.Len(userService.Imports, 1)
+	t.Contains(userService.Imports, `"github.com/adamconnelly/kelpie-test/users"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsVariadicFunctions() {
+	// Arrange
+	input := `package users
+
+type UserType int
+
+type FindUsersOptions struct {
+	Type *UserType
+}
+
+type User struct {
+	ID   uint
+	Name string
+	Type UserType
+}
+
+type UserService interface {
+	FindUsers(opts ...func(*FindUsersOptions)) ([]*User, error)
+}`
+
+	// Act
+	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	requester := result[0]
+
+	findUsers := slices.FirstOrPanic(requester.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUsers" })
+	t.Equal("...func(*users.FindUsersOptions)", findUsers.Parameters[0].Type)
+
+	t.Len(requester.Imports, 1)
+	t.Contains(requester.Imports, `"github.com/adamconnelly/kelpie-test/users"`)
+}
+
 // TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)
 // TODO: what about empty interfaces? Return a warning?
 

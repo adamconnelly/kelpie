@@ -41,6 +41,9 @@ type Maths interface {
 type Sender interface {
 	SendMessage(title *string, message string) error
 	SendMany(details map[string]string) error
+
+	// Blocks the specified email address from being sent to.
+	Block(string) error
 }
 
 type ArgumentMatchingTests struct {
@@ -126,6 +129,18 @@ func (t *ArgumentMatchingTests) Test_CanMatchMaps() {
 	// Assert
 	t.ErrorContains(blockedResult, "cannot send to that person!")
 	t.NoError(successResult)
+}
+
+func (t *ArgumentMatchingTests) Test_CanHandleNamelessParameters() {
+	// Arrange
+	mock := sender.NewMock()
+	mock.Setup(sender.Block("bad-recipient@somewhere.com").Return(errors.New("cannot block that recipient!")))
+
+	// Act
+	blockedResult := mock.Instance().Block("bad-recipient@somewhere.com")
+
+	// Assert
+	t.ErrorContains(blockedResult, "cannot block that recipient!")
 }
 
 func TestArgumentMatching(t *testing.T) {

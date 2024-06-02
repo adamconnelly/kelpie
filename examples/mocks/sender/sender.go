@@ -64,6 +64,27 @@ func (m *instance) SendMany(details map[string]string) (r0 error) {
 	return
 }
 
+// Blocks the specified email address from being sent to.
+func (m *instance) Block(_p0 string) (r0 error) {
+	expectation := m.mock.Call("Block", _p0)
+	if expectation != nil {
+		if expectation.ObserveFn != nil {
+			observe := expectation.ObserveFn.(func(_p0 string) error)
+			return observe(_p0)
+		}
+
+		if expectation.PanicArg != nil {
+			panic(expectation.PanicArg)
+		}
+
+		if expectation.Returns[0] != nil {
+			r0 = expectation.Returns[0].(error)
+		}
+	}
+
+	return
+}
+
 func (m *Mock) Instance() *instance {
 	return &m.instance
 }
@@ -313,5 +334,127 @@ type sendManyAction struct {
 }
 
 func (a *sendManyAction) CreateExpectation() *mocking.Expectation {
+	return &a.expectation
+}
+
+type blockMethodMatcher struct {
+	matcher mocking.MethodMatcher
+}
+
+func (m *blockMethodMatcher) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &m.matcher
+}
+
+// Blocks the specified email address from being sent to.
+func Block[P0 string | mocking.Matcher[string]](_p0 P0) *blockMethodMatcher {
+	result := blockMethodMatcher{
+		matcher: mocking.MethodMatcher{
+			MethodName:       "Block",
+			ArgumentMatchers: make([]mocking.ArgumentMatcher, 1),
+		},
+	}
+
+	if matcher, ok := any(_p0).(mocking.Matcher[string]); ok {
+		result.matcher.ArgumentMatchers[0] = matcher
+	} else {
+		result.matcher.ArgumentMatchers[0] = kelpie.ExactMatch(any(_p0).(string))
+	}
+
+	return &result
+}
+
+type blockTimes struct {
+	matcher *blockMethodMatcher
+}
+
+// Times allows you to restrict the number of times a particular expectation can be matched.
+func (m *blockMethodMatcher) Times(times uint) *blockTimes {
+	m.matcher.Times = &times
+
+	return &blockTimes{
+		matcher: m,
+	}
+}
+
+// Once specifies that the expectation will only match once.
+func (m *blockMethodMatcher) Once() *blockTimes {
+	return m.Times(1)
+}
+
+// Never specifies that the method has not been called. This is mainly useful for verification
+// rather than mocking.
+func (m *blockMethodMatcher) Never() *blockTimes {
+	return m.Times(0)
+}
+
+// Return returns the specified results when the method is called.
+func (t *blockTimes) Return(r0 error) *blockAction {
+	return &blockAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (t *blockTimes) Panic(arg any) *blockAction {
+	return &blockAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (t *blockTimes) When(observe func(_p0 string) error) *blockAction {
+	return &blockAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &t.matcher.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+func (t *blockTimes) CreateMethodMatcher() *mocking.MethodMatcher {
+	return &t.matcher.matcher
+}
+
+// Return returns the specified results when the method is called.
+func (m *blockMethodMatcher) Return(r0 error) *blockAction {
+	return &blockAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			Returns:       []any{r0},
+		},
+	}
+}
+
+// Panic panics using the specified argument when the method is called.
+func (m *blockMethodMatcher) Panic(arg any) *blockAction {
+	return &blockAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			PanicArg:      arg,
+		},
+	}
+}
+
+// When calls the specified observe callback when the method is called.
+func (m *blockMethodMatcher) When(observe func(_p0 string) error) *blockAction {
+	return &blockAction{
+		expectation: mocking.Expectation{
+			MethodMatcher: &m.matcher,
+			ObserveFn:     observe,
+		},
+	}
+}
+
+type blockAction struct {
+	expectation mocking.Expectation
+}
+
+func (a *blockAction) CreateExpectation() *mocking.Expectation {
 	return &a.expectation
 }

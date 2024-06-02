@@ -103,6 +103,18 @@ func (i *importHelper) getPackageIdentifiers(e ast.Expr) []*ast.Ident {
 	case *ast.MapType:
 		identifiers = append(identifiers, i.getPackageIdentifiers(n.Key)...)
 		identifiers = append(identifiers, i.getPackageIdentifiers(n.Value)...)
+	case *ast.Ellipsis:
+		identifiers = append(identifiers, i.getPackageIdentifiers(n.Elt)...)
+	case *ast.FuncType:
+		for _, param := range n.Params.List {
+			identifiers = append(identifiers, i.getPackageIdentifiers(param.Type)...)
+		}
+
+		if n.Results != nil {
+			for _, result := range n.Results.List {
+				identifiers = append(identifiers, i.getPackageIdentifiers(result.Type)...)
+			}
+		}
 	default:
 		panic(fmt.Sprintf("Could not get package identifier from ast expression: %v. This is a bug in Kelpie!", e))
 	}

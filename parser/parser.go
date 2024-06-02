@@ -5,6 +5,7 @@ package parser
 import (
 	"fmt"
 	"go/ast"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -118,10 +119,17 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 
 									// TODO: check what situation would cause Type to not be ast.FuncType. Maybe ast.Bad?
 									funcType := method.Type.(*ast.FuncType)
-									for _, param := range funcType.Params.List {
-										for _, paramName := range param.Names {
+									for paramIndex, param := range funcType.Params.List {
+										if len(param.Names) > 0 {
+											for _, paramName := range param.Names {
+												methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
+													Name: paramName.Name,
+													Type: getTypeName(param.Type, p),
+												})
+											}
+										} else {
 											methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-												Name: paramName.Name,
+												Name: "_p" + strconv.Itoa(paramIndex),
 												Type: getTypeName(param.Type, p),
 											})
 										}
@@ -199,6 +207,37 @@ func getTypeName(e ast.Expr, p *packages.Package) string {
 		valueType := getTypeName(n.Value, p)
 
 		return "map[" + keyType + "]" + valueType
+	case *ast.FuncType:
+		var params []string
+		for _, param := range n.Params.List {
+			parameterNames := slices.Map(param.Names, func(i *ast.Ident) string { return i.Name })
+			if len(parameterNames) > 0 {
+				params = append(params, strings.Join(parameterNames, ", ")+" "+getTypeName(param.Type, p))
+			} else {
+				params = append(params, getTypeName(param.Type, p))
+			}
+		}
+
+		var results []string
+		if n.Results != nil {
+			for _, result := range n.Results.List {
+				resultNames := slices.Map(result.Names, func(i *ast.Ident) string { return i.Name })
+				if len(resultNames) > 0 {
+					results = append(results, strings.Join(resultNames, ", ")+" "+getTypeName(result.Type, p))
+				} else {
+					results = append(results, getTypeName(result.Type, p))
+				}
+			}
+		}
+
+		functionDefinition := "func(" + strings.Join(params, ", ") + ")"
+		if len(results) > 0 {
+			functionDefinition += " (" + strings.Join(results, ", ") + ")"
+		}
+
+		return functionDefinition
+	case *ast.Ellipsis:
+		return "..." + getTypeName(n.Elt, p)
 	}
 
 	panic(fmt.Sprintf("Unknown type %v. This is a bug in Kelpie!", e))
