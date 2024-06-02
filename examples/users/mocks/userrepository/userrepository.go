@@ -4,6 +4,7 @@ package userrepository
 import (
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/mocking"
+
 	"github.com/adamconnelly/kelpie/examples/users"
 )
 

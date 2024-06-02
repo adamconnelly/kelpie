@@ -4,6 +4,7 @@ package requester
 import (
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/mocking"
+
 	"io"
 	. "net/http"
 )
