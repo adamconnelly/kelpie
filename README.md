@@ -10,7 +10,6 @@ At the moment Kelpie is very much in development, and there are missing features
 
 The following is a list of known-outstanding features:
 
-- [ ] Generating mocks for external (i.e. not in your source tree) interfaces by name.
 - [ ] Generating mocks for inline interfaces in structs.
 
 ## Quickstart
@@ -204,6 +203,32 @@ mock.Instance().Register("Jim")
 t.True(mock.Called(registrationservice.Register("Mark").Once()))
 t.True(mock.Called(registrationservice.Register(kelpie.Any[string]()).Times(2)))
 t.True(mock.Called(registrationservice.Register("Wendy").Never()))
+```
+
+### Mocking an interface from an external package
+
+Kelpie can happily mock interfaces that aren't part of your own source. You don't need to do anything special to mock an "external" interface - just specify the package and interface name you want to mock:
+
+```go
+//go:generate go run ../cmd/kelpie generate --package io --interfaces Reader
+
+func (t *ExternalTypesTests) Test_CanMockAnExternalType() {
+	// Arrange
+	var bytesRead []byte
+	mock := reader.NewMock()
+	mock.Setup(reader.Read(kelpie.Match(func(b []byte) bool {
+		bytesRead = b
+		return true
+	})).Return(20, nil))
+
+	// Act
+	read, err := mock.Instance().Read([]byte("Hello World!"))
+
+	// Assert
+	t.NoError(err)
+	t.Equal(20, read)
+	t.Equal([]byte("Hello World!"), bytesRead)
+}
 ```
 
 ## FAQ
