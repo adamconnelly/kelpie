@@ -53,6 +53,7 @@ reviewable:
 # ensure generate target doesn't create a diff
 check-diff: generate
 	@$(INFO) checking that branch is clean
+	git diff
 	@if git status --porcelain | grep . ; then $(ERR) There are uncommitted changes after running make generate. Please ensure you commit all generated files in this branch after running make generate. && false; else $(OK) branch is clean; fi
 
 .PHONY: fmt
