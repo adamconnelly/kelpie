@@ -78,12 +78,12 @@ func (m *Mock) Call(methodName string, args ...any) *Expectation {
 
 		if expectation.MethodMatcher.Times != nil {
 			calls := slices.All(m.MethodCalls, func(methodCall *MethodCall) bool {
-				return methodMatchesExpectation(methodMatcher, methodCall.MethodName, methodCall.Args...)
+				return methodMatchesExpectation(methodMatcher, methodCall.MethodName, methodCall.Args)
 			})
 			if uint(len(calls)) <= *expectation.MethodMatcher.Times {
 				return expectation
 			}
-		} else if methodMatchesExpectation(methodMatcher, methodName, args...) {
+		} else if methodMatchesExpectation(methodMatcher, methodName, args) {
 			return expectation
 		}
 	}
@@ -97,14 +97,14 @@ func (m *Mock) Called(creator MethodMatcherCreator) bool {
 
 	if methodMatcher.Times != nil {
 		matches := slices.All(m.MethodCalls, func(call *MethodCall) bool {
-			return methodMatchesExpectation(methodMatcher, call.MethodName, call.Args...)
+			return methodMatchesExpectation(methodMatcher, call.MethodName, call.Args)
 		})
 
 		return uint(len(matches)) == *methodMatcher.Times
 	}
 
 	return slices.Contains(m.MethodCalls, func(call *MethodCall) bool {
-		return methodMatchesExpectation(methodMatcher, call.MethodName, call.Args...)
+		return methodMatchesExpectation(methodMatcher, call.MethodName, call.Args)
 	})
 }
 
@@ -114,7 +114,7 @@ func (m *Mock) Reset() {
 	m.MethodCalls = nil
 }
 
-func methodMatchesExpectation(methodMatcher *MethodMatcher, methodName string, args ...any) bool {
+func methodMatchesExpectation(methodMatcher *MethodMatcher, methodName string, args []any) bool {
 	if methodMatcher.MethodName == methodName {
 		if len(args) != len(methodMatcher.ArgumentMatchers) {
 			panic(fmt.Sprintf("Argument mismatch in call to '%s'.\n    Expected: %d\n    Actual: %d\nThis is a bug in Kelpie - please report it!", methodMatcher.MethodName, len(methodMatcher.ArgumentMatchers), len(args)))

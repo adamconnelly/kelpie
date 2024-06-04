@@ -115,6 +115,10 @@ func (i *importHelper) getPackageIdentifiers(e ast.Expr) []*ast.Ident {
 				identifiers = append(identifiers, i.getPackageIdentifiers(result.Type)...)
 			}
 		}
+	case *ast.InterfaceType:
+		// No need to check for any types for empty interfaces. Might need to adjust this in future
+		// if it turns out it's valid to have non-empty interfaces as parameters/results.
+		break
 	default:
 		panic(fmt.Sprintf("Could not get package identifier from ast expression: %v. This is a bug in Kelpie!", e))
 	}

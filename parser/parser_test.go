@@ -513,10 +513,77 @@ type UserService interface {
 	requester := result[0]
 
 	findUsers := slices.FirstOrPanic(requester.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUsers" })
-	t.Equal("...func(*users.FindUsersOptions)", findUsers.Parameters[0].Type)
+	t.Equal("func(*users.FindUsersOptions)", findUsers.Parameters[0].Type)
 
 	t.Len(requester.Imports, 1)
 	t.Contains(requester.Imports, `"github.com/adamconnelly/kelpie-test/users"`)
+}
+
+func (t *ParserTests) Test_Parse_SupportsEmptyInterfaceAndAny() {
+	// Arrange
+	input := `package printing
+
+type Printer interface {
+	Printf(formatString string, args ...interface{}) string
+	PrintfAny(formatString string, args ...any) string
+}`
+
+	// Act
+	result, err := t.ParseInput("printing", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	printer := result[0]
+
+	printf := slices.FirstOrPanic(printer.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Printf" })
+	t.Equal("interface{}", printf.Parameters[1].Type)
+	t.True(printf.Parameters[1].IsVariadic)
+
+	printfAny := slices.FirstOrPanic(printer.Methods, func(m parser.MethodDefinition) bool { return m.Name == "PrintfAny" })
+	t.Equal("any", printfAny.Parameters[1].Type)
+	t.True(printfAny.Parameters[1].IsVariadic)
+}
+
+func (t *ParserTests) Test_Parse_MarksNonEmptyInterfaceParameters() {
+	// Arrange
+	input := `package secrets
+
+import "context"
+
+type Encrypter interface {
+	Encrypt(value string) string
+}
+
+type SecretsManager interface {
+	GetSecret(ctx context.Context, name string) string
+	PutSecret(name string, value string, encrypter Encrypter)
+}`
+
+	// Act
+	result, err := t.ParseInput("secrets", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	secretsManager := slices.FirstOrPanic(result, func(m parser.MockedInterface) bool { return m.Name == "SecretsManager" })
+
+	getSecret := slices.FirstOrPanic(secretsManager.Methods, func(m parser.MethodDefinition) bool { return m.Name == "GetSecret" })
+	t.Equal("ctx", getSecret.Parameters[0].Name)
+	t.True(getSecret.Parameters[0].IsNonEmptyInterface)
+
+	t.Equal("name", getSecret.Parameters[1].Name)
+	t.False(getSecret.Parameters[1].IsNonEmptyInterface)
+
+	putSecret := slices.FirstOrPanic(secretsManager.Methods, func(m parser.MethodDefinition) bool { return m.Name == "PutSecret" })
+	t.Equal("name", putSecret.Parameters[0].Name)
+	t.False(putSecret.Parameters[0].IsNonEmptyInterface)
+
+	t.Equal("value", putSecret.Parameters[1].Name)
+	t.False(putSecret.Parameters[1].IsNonEmptyInterface)
+
+	t.Equal("encrypter", putSecret.Parameters[2].Name)
+	t.True(putSecret.Parameters[2].IsNonEmptyInterface)
 }
 
 // TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)

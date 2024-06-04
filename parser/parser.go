@@ -5,6 +5,7 @@ package parser
 import (
 	"fmt"
 	"go/ast"
+	"go/types"
 	"strconv"
 	"strings"
 
@@ -51,6 +52,12 @@ type ParameterDefinition struct {
 
 	// Type is the parameter's type.
 	Type string
+
+	// IsVariadic indicates that this is the variable argument to a variadic function.
+	IsVariadic bool
+
+	// IsNonEmptyInterface indicates that the parameter type is an interface with at least one method.
+	IsNonEmptyInterface bool
 }
 
 // ResultDefinition contains information about a method result.
@@ -122,15 +129,21 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 									for paramIndex, param := range funcType.Params.List {
 										if len(param.Names) > 0 {
 											for _, paramName := range param.Names {
+												typeInfo := getTypeInfo(param.Type, p)
 												methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-													Name: paramName.Name,
-													Type: getTypeName(param.Type, p),
+													Name:                paramName.Name,
+													Type:                typeInfo.name,
+													IsVariadic:          typeInfo.isVariadic,
+													IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
 												})
 											}
 										} else {
+											typeInfo := getTypeInfo(param.Type, p)
 											methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-												Name: "_p" + strconv.Itoa(paramIndex),
-												Type: getTypeName(param.Type, p),
+												Name:                "_p" + strconv.Itoa(paramIndex),
+												Type:                typeInfo.name,
+												IsVariadic:          typeInfo.isVariadic,
+												IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
 											})
 										}
 
@@ -140,15 +153,17 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 									if funcType.Results != nil {
 										for _, result := range funcType.Results.List {
 											if len(result.Names) > 0 {
+												typeInfo := getTypeInfo(result.Type, p)
 												for _, resultName := range result.Names {
 													methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
 														Name: resultName.Name,
-														Type: getTypeName(result.Type, p),
+														Type: typeInfo.name,
 													})
 												}
 											} else {
+												typeInfo := getTypeInfo(result.Type, p)
 												methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-													Type: getTypeName(result.Type, p),
+													Type: typeInfo.name,
 												})
 											}
 
@@ -173,6 +188,26 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 	}
 
 	return interfaces, nil
+}
+
+type typeInfo struct {
+	name                string
+	isVariadic          bool
+	isNonEmptyInterface bool
+}
+
+func getTypeInfo(e ast.Expr, p *packages.Package) typeInfo {
+	if ellipsis, ok := e.(*ast.Ellipsis); ok {
+		return typeInfo{
+			name:       getTypeName(ellipsis.Elt, p),
+			isVariadic: true,
+		}
+	}
+
+	return typeInfo{
+		name:                getTypeName(e, p),
+		isNonEmptyInterface: isNonEmptyInterface(e, p),
+	}
 }
 
 func getTypeName(e ast.Expr, p *packages.Package) string {
@@ -236,9 +271,22 @@ func getTypeName(e ast.Expr, p *packages.Package) string {
 		}
 
 		return functionDefinition
-	case *ast.Ellipsis:
-		return "..." + getTypeName(n.Elt, p)
+	case *ast.InterfaceType:
+		// This is maybe a bit of a simplification. We might need to actually take a look at the fields.
+		return "interface{}"
 	}
 
 	panic(fmt.Sprintf("Unknown type %v. This is a bug in Kelpie!", e))
+}
+
+func isNonEmptyInterface(e ast.Expr, p *packages.Package) bool {
+	if t, ok := p.TypesInfo.Types[e]; ok {
+		if namedType, ok := t.Type.(*types.Named); ok {
+			if i, ok := namedType.Underlying().(*types.Interface); ok {
+				return !i.Empty()
+			}
+		}
+	}
+
+	return false
 }

@@ -205,6 +205,90 @@ t.True(mock.Called(registrationservice.Register(kelpie.Any[string]()).Times(2)))
 t.True(mock.Called(registrationservice.Register("Wendy").Never()))
 ```
 
+### Variable parameter lists (variadic functions)
+
+You can mock methods that accept variable parameter lists, but there are some caveats to be aware of. Here's a simple example using exact matching:
+
+```go
+type Printer interface {
+	Printf(formatString string, args ...interface{}) string
+}
+
+func (t *VariadicFunctionsTests) Test_Parameters_ExactMatch() {
+	// Arrange
+	mock := printer.NewMock()
+
+	mock.Setup(printer.Printf("Hello %s. This is %s, %s.", "Dolly", "Louis", "Dolly").Return("Hello Dolly. This is Louis, Dolly."))
+
+	// Act
+	result := mock.Instance().Printf("Hello %s. This is %s, %s.", "Dolly", "Louis", "Dolly")
+
+	// Assert
+	t.Equal("Hello Dolly. This is Louis, Dolly.", result)
+}
+```
+
+Because of the way generics work, you can't mix exact matching with custom matching. So for example the following will work:
+
+```go
+mock.Setup(printer.Printf("Hello %s. This is %s, %s.", kelpie.ExactMatch("Dolly"), kelpie.Any[string](), kelpie.ExactMatch("Dolly")).
+		Return("Hello Dolly. This is Louis, Dolly."))
+```
+
+But the following will not compile:
+
+```go
+mock.Setup(printer.Printf("Hello %s. This is %s, %s.", "Dolly", kelpie.Any[string](), "Dolly").
+		Return("Hello Dolly. This is Louis, Dolly."))
+```
+
+If your variadic parameter is `...any` or `...interface{}`, and you try to pass in multiple different types of argument, the Go compiler can't infer the types for you. Here's an example:
+
+```go
+// Fails with a "mismatched types untyped string and untyped int (cannot infer P1)" error
+mock.Called(printer.Printf("Hello world!", "One", 2, 3.0))
+```
+
+To fix this, just specify the type parameters:
+
+```go
+mock.Called(printer.Printf[string, any]("Hello world!", "One", 2, 3.0))
+```
+
+### Interface parameters
+
+Under the hood, Kelpie uses Go generics to allow either the actual parameter type or a Kelpie matcher to be passed in when setting up mocks or verifying expectations. For example, say we have the following method:
+
+```go
+Add(a, b int) int
+```
+
+Kelpie will generate the following method for configuring expectations on `Add`:
+
+```go
+func Add[P0 int | mocking.Matcher[int], P1 int | mocking.Matcher[int]](a P0, b P1) *addMethodMatcher {
+```
+
+This is neat, because it allows each parameter to either be an `int`, or a Kelpie matcher, allowing you to write simple setups like this:
+
+```go
+mock.Setup(maths.Add(10, 20).Return(30))
+```
+
+Unfortunately Go generics don't allow a union that contains a non-empty interface. Because of this if any of your parameters accept an interface, you need to use a Kelpie matcher. For example the following won't work:
+
+```go
+var ctx context.Context
+mock.Setup(secrets.Get(ctx, "MySecret").Return("SuperSecret"))
+```
+
+But the following will:
+
+```go
+var ctx context.Context
+mock.Setup(secrets.Get(kelpie.Any[context.Context](), "MySecret").Return("SuperSecret"))
+```
+
 ### Mocking an interface from an external package
 
 Kelpie can happily mock interfaces that aren't part of your own source. You don't need to do anything special to mock an "external" interface - just specify the package and interface name you want to mock:
