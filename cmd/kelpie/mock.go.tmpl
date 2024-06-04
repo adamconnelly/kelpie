@@ -1,9 +1,13 @@
 {{- define "parameterWithTypeList" -}}
-{{ range $i, $param := . }}{{ if $i }}, {{ end }}{{ $param.Name }} {{ $param.Type }}{{ end }}
+{{ range $i, $param := . }}{{ if $i }}, {{ end }}{{ $param.Name }} {{ if $param.IsVariadic }}...{{ end }}{{ $param.Type }}{{ end }}
 {{- end -}}
 
 {{- define "parameterList" -}}
 {{ range $i, $param := . }}{{ if $i }}, {{ end }}{{ $param.Name }}{{ end }}
+{{- end -}}
+
+{{- define "observeParameterList" -}}
+{{ range $i, $param := . }}{{ if $i }}, {{ end }}{{ $param.Name }}{{ if $param.IsVariadic }}...{{ end }}{{ end }}
 {{- end -}}
 
 {{- define "resultWithTypeList" -}}
@@ -23,11 +27,11 @@ func({{ template "parameterWithTypeList" .Parameters }}){{ if .Results }} {{ tem
 {{- end -}}
 
 {{- define "matcherTypeParams" -}}
-{{ range $i, $param := . }}{{ if ne $i 0 }}, {{ end }}P{{ $i }} {{ $param.Type }} | mocking.Matcher[{{ $param.Type }}]{{ end }}
+{{ range $i, $param := . }}{{ if ne $i 0 }}, {{ end }}P{{ $i }} {{ if not $param.IsNonEmptyInterface }}{{ $param.Type }} | {{ end }}mocking.Matcher[{{ $param.Type }}]{{ end }}
 {{- end -}}
 
 {{- define "matcherParams" -}}
-{{ range $i, $param := . }}{{ if ne $i 0 }}, {{ end }}{{ $param.Name }} P{{ $i }}{{ end }}
+{{ range $i, $param := . }}{{ if ne $i 0 }}, {{ end }}{{ $param.Name }} {{ if $param.IsVariadic }}...{{ end }}P{{ $i }}{{ end }}
 {{- end -}}
 
 {{- define "methodMatcherTypeName" -}}
@@ -83,9 +87,9 @@ func (m *instance) {{ $method.Name }}({{ template "parameterWithTypeList" $metho
 		if expectation.ObserveFn != nil {
 			observe := expectation.ObserveFn.({{ template "observationCallback" $method }})
 			{{- if $method.Results }}
-			return observe({{ template "parameterList" $method.Parameters }})
+			return observe({{ template "observeParameterList" $method.Parameters }})
 			{{- else }}
-			observe({{ template "parameterList" $method.Parameters }})
+			observe({{ template "observeParameterList" $method.Parameters }})
 			return
 			{{- end }}
 		}
@@ -130,11 +134,24 @@ func {{ $method.Name }}{{ if $method.Parameters }}[{{ template "matcherTypeParam
 		},
 	}
 {{ range $i, $param := $method.Parameters }}
+	{{- if $param.IsVariadic }}
+	var matchers []mocking.ArgumentMatcher
+	for _, arg := range {{ $param.Name }} {
+		if matcher, ok := any(arg).(mocking.ArgumentMatcher); ok {
+			matchers = append(matchers, matcher)
+		} else {
+			matchers = append(matchers, kelpie.ExactMatch(any(arg).({{ $param.Type }})))
+		}
+	}
+
+	result.matcher.ArgumentMatchers[{{ $i }}] = mocking.Variadic(matchers)
+	{{- else }}
 	if matcher, ok := any({{ $param.Name }}).(mocking.Matcher[{{ $param.Type }}]); ok {
 		result.matcher.ArgumentMatchers[{{ $i }}] = matcher
 	} else {
 		result.matcher.ArgumentMatchers[{{ $i }}] = kelpie.ExactMatch(any({{ $param.Name }}).({{ $param.Type }}))
 	}
+	{{- end }}
 {{ end }}
 	return &result
 }
