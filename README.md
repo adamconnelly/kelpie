@@ -283,6 +283,14 @@ secretsManagerMock.Called(
 		kelpie.Any[context.Context](), kelpie.Any[*secretsmanager.PutSecretValueInput]()))
 ```
 
+#### Matching any arguments
+
+Similar to the way that you can match against no parameters with `kelpie.None[T]()`, you can match that any amount of parameters are passed to a variadic function using `kelpie.AnyArgs[T]()`:
+
+```go
+mock.Setup(printer.Printf("Don't panic!", kelpie.AnyArgs[any]()).Panic("Ok!"))
+```
+
 ### Interface parameters
 
 Under the hood, Kelpie uses Go generics to allow either the actual parameter type or a Kelpie matcher to be passed in when setting up mocks or verifying expectations. For example, say we have the following method:

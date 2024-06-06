@@ -67,6 +67,25 @@ func (t *VariadicFunctionsTests) Test_Parameters_NoneProvided() {
 	t.False(mock.Called(printer.Printf("Testing %d %d %d", 1, 2, 3)))
 }
 
+func (t *VariadicFunctionsTests) Test_Parameters_AnyMatchingWithArgumentList() {
+	// Arrange
+	mock := printer.NewMock()
+
+	mock.Setup(printer.Printf("Nothing to say", kelpie.AnyArgs[any]()).
+		Return("Nothing to say"))
+
+	// Act
+	result1 := mock.Instance().Printf("Nothing to say")
+	result2 := mock.Instance().Printf("Nothing to say", 1)
+	result3 := mock.Instance().Printf("Nothing to say", 1, "two", 3)
+
+	// Assert
+	t.Equal("Nothing to say", result1)
+	t.Equal("Nothing to say", result2)
+	t.Equal("Nothing to say", result3)
+	t.True(mock.Called(printer.Printf("Nothing to say", kelpie.AnyArgs[any]())))
+}
+
 func (t *VariadicFunctionsTests) Test_Parameters_When() {
 	// Arrange
 	mock := printer.NewMock()

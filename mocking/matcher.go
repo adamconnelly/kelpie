@@ -7,15 +7,31 @@ type ArgumentMatcher interface {
 	// IsMatch returns true when the value of the argument matches the expectation.
 	IsMatch(other any) bool
 
-	// IsNoneMatcher is used to check whether the matcher is being used to match against an
-	// empty argument list for a variadic function.
-	IsNoneMatcher() bool
+	// MatcherType returns the type of the matcher.
+	MatcherType() MatcherType
 }
+
+// MatcherType defines the type of the matcher.
+type MatcherType uint
+
+const (
+	// MatcherTypeFn is a matcher that uses a custom match function.
+	MatcherTypeFn MatcherType = iota
+
+	// MatcherTypeNone is used to specify that no arguments are passed to a variadic function.
+	MatcherTypeNone
+
+	// MatcherTypeAnyArgs is used to specify that any number of arguments can be passed to a variadic function.
+	MatcherTypeAnyArgs
+
+	// MatcherTypeVariadic is a matcher that matches the variable argument list passed to a variadic function.
+	MatcherTypeVariadic
+)
 
 // Matcher is used to match an argument in a method invocation.
 type Matcher[T any] struct {
-	MatchFn       func(input T) bool
-	isNoneMatcher bool
+	MatchFn     func(input T) bool
+	matcherType MatcherType
 }
 
 // IsMatch returns true if other is a match to the expectation.
@@ -23,9 +39,9 @@ func (i Matcher[T]) IsMatch(other any) bool {
 	return i.MatchFn(other.(T))
 }
 
-// IsNoneMatcher returns true if this matcher matches against variadic function empty argument lists.
-func (i Matcher[T]) IsNoneMatcher() bool {
-	return i.isNoneMatcher
+// MatcherType returns the matcher's type.
+func (i Matcher[T]) MatcherType() MatcherType {
+	return i.matcherType
 }
 
 type variadicMatcher struct {
@@ -38,9 +54,9 @@ func Variadic(matchers []ArgumentMatcher) ArgumentMatcher {
 	return &variadicMatcher{matchers: matchers}
 }
 
-// IsNoneMatcher always returns false for variadicMatcher.
-func (v *variadicMatcher) IsNoneMatcher() bool {
-	return false
+// MatcherType returns the type of the matcher.
+func (v *variadicMatcher) MatcherType() MatcherType {
+	return MatcherTypeVariadic
 }
 
 // IsMatch returns true if other is a match to the expectation.
@@ -63,8 +79,13 @@ func (v *variadicMatcher) IsMatch(other any) bool {
 		}
 	}
 
-	if len(v.matchers) == 1 && v.matchers[0].IsNoneMatcher() {
-		return len(args) == 0
+	if len(v.matchers) == 1 {
+		switch v.matchers[0].MatcherType() {
+		case MatcherTypeNone:
+			return len(args) == 0
+		case MatcherTypeAnyArgs:
+			return true
+		}
 	}
 
 	if len(args) != len(v.matchers) {
@@ -83,7 +104,15 @@ func (v *variadicMatcher) IsMatch(other any) bool {
 // None is used to indicate that no arguments should be passed to a variadic function.
 func None[T any]() Matcher[T] {
 	return Matcher[T]{
-		isNoneMatcher: true,
+		matcherType: MatcherTypeNone,
+	}
+}
+
+// AnyArgs is used to indicate that any amount of arguments (including no arguments) should
+// be passed to a variadic function.
+func AnyArgs[T any]() Matcher[T] {
+	return Matcher[T]{
+		matcherType: MatcherTypeAnyArgs,
 	}
 }
 
