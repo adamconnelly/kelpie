@@ -23,3 +23,9 @@ func Any[T any]() mocking.Matcher[T] {
 func Match[T any](isMatch func(arg T) bool) mocking.Matcher[T] {
 	return mocking.Matcher[T]{MatchFn: isMatch}
 }
+
+// None is used when mocking methods that contain a variable parameter list to indicate that
+// no parameters should be provided, for example: printMock.Setup(print.Printf("Testing 123", kelpie.None[any]())).
+func None[T any]() mocking.Matcher[T] {
+	return mocking.None[T]()
+}

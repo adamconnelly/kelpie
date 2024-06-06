@@ -228,6 +228,8 @@ func (t *VariadicFunctionsTests) Test_Parameters_ExactMatch() {
 }
 ```
 
+#### Mixing exact and custom matching
+
 Because of the way generics work, you can't mix exact matching with custom matching. So for example the following will work:
 
 ```go
@@ -242,6 +244,8 @@ mock.Setup(printer.Printf("Hello %s. This is %s, %s.", "Dolly", kelpie.Any[strin
 		Return("Hello Dolly. This is Louis, Dolly."))
 ```
 
+#### Mixing argument types
+
 If your variadic parameter is `...any` or `...interface{}`, and you try to pass in multiple different types of argument, the Go compiler can't infer the types for you. Here's an example:
 
 ```go
@@ -253,6 +257,30 @@ To fix this, just specify the type parameters:
 
 ```go
 mock.Called(printer.Printf[string, any]("Hello world!", "One", 2, 3.0))
+```
+
+#### Matching no arguments
+
+If you want to match that a variadic function call is made with no arguments provided, you can use `kelpie.None[T]()`:
+
+```go
+mock.Setup(printer.Printf("Hello world", kelpie.None[any]()))
+mock.Called(secrets.Get(kelpie.Any[context.Context](), kelpie.Any[string](), kelpie.None[any]()))
+```
+
+The reason for using `None` is that otherwise the Go compiler can't infer the type of the variadic parameter:
+
+```go
+// Fails with "cannot infer P1"
+mock.Setup(printer.Printf("Nothing to say").Return("Nothing to say"))
+```
+
+Another option instead of using `None` is to specify the type arguments explicitly, but that can become very verbose, especially when using Kelpie's matching functions:
+
+```go
+secretsManagerMock.Called(
+	secretsmanagerapi.PutSecretValue[mocking.Matcher[context.Context], mocking.Matcher[*secretsmanager.PutSecretValueInput], func(*secretsmanager.Options)](
+		kelpie.Any[context.Context](), kelpie.Any[*secretsmanager.PutSecretValueInput]()))
 ```
 
 ### Interface parameters

@@ -35,6 +35,16 @@ func (t *MatcherTests) Test_VariadicMatcher_MatchesWhenParametersEmpty() {
 			inputs:   []any{},
 			isMatch:  true,
 		},
+		"None matcher matches empty input": {
+			matchers: []mocking.ArgumentMatcher{mocking.None[any]()},
+			inputs:   []any{},
+			isMatch:  true,
+		},
+		"None matcher does not match non-empty input": {
+			matchers: []mocking.ArgumentMatcher{mocking.None[any]()},
+			inputs:   []any{"testing"},
+			isMatch:  false,
+		},
 		"Matchers empty but arguments provided": {
 			matchers: []mocking.ArgumentMatcher{},
 			inputs:   []any{"testing", 1, 2, 3},

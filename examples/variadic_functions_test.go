@@ -48,6 +48,25 @@ func (t *VariadicFunctionsTests) Test_Parameters_AnyMatch() {
 	t.Equal("Hello Dolly. This is Louis, Dolly.", result)
 }
 
+func (t *VariadicFunctionsTests) Test_Parameters_NoneProvided() {
+	// Arrange
+	mock := printer.NewMock()
+
+	mock.Setup(printer.Printf("Nothing to say", kelpie.None[any]()).
+		Return("Nothing to say"))
+
+	// Act
+	result1 := mock.Instance().Printf("Nothing to say")
+	result2 := mock.Instance().Printf("Who are %s", "you")
+
+	// Assert
+	t.Equal("Nothing to say", result1)
+	t.Equal("", result2)
+	t.True(mock.Called(printer.Printf("Nothing to say", kelpie.None[any]())))
+	t.True(mock.Called(printer.Printf(kelpie.Any[string](), kelpie.None[any]())))
+	t.False(mock.Called(printer.Printf("Testing %d %d %d", 1, 2, 3)))
+}
+
 func (t *VariadicFunctionsTests) Test_Parameters_When() {
 	// Arrange
 	mock := printer.NewMock()
