@@ -50,7 +50,8 @@ func({{ template "parameterWithTypeList" .Parameters }}){{ if .Results }} {{ tem
 package {{ .PackageName }}
 
 import (
-	"github.com/adamconnelly/kelpie"
+	{{- if .AnyMethodsHaveParameters }}
+	"github.com/adamconnelly/kelpie"{{ end }}
 	"github.com/adamconnelly/kelpie/mocking"
 {{- with .Imports }}
 {{ range $i := . }}

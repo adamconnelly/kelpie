@@ -30,6 +30,18 @@ type MockedInterface struct {
 	Imports []string
 }
 
+// AnyMethodsHaveParameters returns true if at least one method in the interface has at least
+// one parameter.
+func (i MockedInterface) AnyMethodsHaveParameters() bool {
+	for _, method := range i.Methods {
+		if len(method.Parameters) > 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
 // MethodDefinition defines a method in an interface.
 type MethodDefinition struct {
 	// Name is the name of the method.
@@ -109,77 +121,21 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 			ast.Inspect(fileNode, func(n ast.Node) bool {
 				if t, ok := n.(*ast.TypeSpec); ok {
 					if t.Name.IsExported() {
-						if typeSpecType, ok := t.Type.(*ast.InterfaceType); ok {
+						if interfaceType, ok := t.Type.(*ast.InterfaceType); ok {
 							if filter.Include(t.Name.Name) {
-								importHelper := newImportHelper(p.TypesInfo, fileNode.Imports, p)
-								mockedInterface := MockedInterface{
-									Name:        t.Name.Name,
-									PackageName: strings.ToLower(t.Name.Name),
-								}
-
-								for _, method := range typeSpecType.Methods.List {
-									methodDefinition := MethodDefinition{
-										// When are there multiple names?
-										Name:    method.Names[0].Name,
-										Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
-									}
-
-									// TODO: check what situation would cause Type to not be ast.FuncType. Maybe ast.Bad?
-									funcType := method.Type.(*ast.FuncType)
-									for paramIndex, param := range funcType.Params.List {
-										if len(param.Names) > 0 {
-											for _, paramName := range param.Names {
-												typeInfo := getTypeInfo(param.Type, p)
-												methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-													Name:                paramName.Name,
-													Type:                typeInfo.name,
-													IsVariadic:          typeInfo.isVariadic,
-													IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
-												})
-											}
-										} else {
-											typeInfo := getTypeInfo(param.Type, p)
-											methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-												Name:                "_p" + strconv.Itoa(paramIndex),
-												Type:                typeInfo.name,
-												IsVariadic:          typeInfo.isVariadic,
-												IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
-											})
-										}
-
-										importHelper.AddImportsRequiredForType(param.Type)
-									}
-
-									if funcType.Results != nil {
-										for _, result := range funcType.Results.List {
-											if len(result.Names) > 0 {
-												typeInfo := getTypeInfo(result.Type, p)
-												for _, resultName := range result.Names {
-													methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-														Name: resultName.Name,
-														Type: typeInfo.name,
-													})
-												}
-											} else {
-												typeInfo := getTypeInfo(result.Type, p)
-												methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-													Type: typeInfo.name,
-												})
-											}
-
-											importHelper.AddImportsRequiredForType(result.Type)
-										}
-									}
-
-									mockedInterface.Methods = append(mockedInterface.Methods, methodDefinition)
-								}
-
-								mockedInterface.Imports = importHelper.RequiredImports()
-
-								interfaces = append(interfaces, mockedInterface)
+								interfaces = append(interfaces, parseInterface(t.Name.Name, interfaceType, p, fileNode.Imports))
+							}
+						} else if structType, ok := t.Type.(*ast.StructType); ok {
+							for _, f := range structType.Fields.List {
+								interfaces = append(interfaces, parseStructField(t, f, p, fileNode.Imports, filter)...)
 							}
 						}
 					}
+
+					// As soon as we've found a type, we don't need to continue traversing down
+					// this path of the tree since we'll already have gotten all the info we
+					// need from the type node by now.
+					return false
 				}
 
 				return true
@@ -188,6 +144,107 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 	}
 
 	return interfaces, nil
+}
+
+func parseStructField(structNode *ast.TypeSpec, field *ast.Field, pkg *packages.Package, importSpecs []*ast.ImportSpec, filter InterfaceFilter) []MockedInterface {
+	var interfaces []MockedInterface
+	if structTypeInfo, ok := pkg.TypesInfo.Defs[structNode.Name]; ok {
+		if interfaceType, ok := field.Type.(*ast.InterfaceType); ok {
+			if filter.Include(structTypeInfo.Name() + "." + field.Names[0].Name) {
+				parsedInterface := parseInterface(field.Names[0].Name, interfaceType, pkg, importSpecs)
+				interfaces = append(interfaces, parsedInterface)
+			}
+		} else if structType, ok := field.Type.(*ast.StructType); ok {
+			for _, f := range structType.Fields.List {
+				interfaces = append(interfaces, parseNestedStructField(structTypeInfo.Name()+"."+field.Names[0].Name+".", f, pkg, importSpecs, filter)...)
+			}
+		}
+	}
+
+	return interfaces
+}
+
+func parseNestedStructField(prefix string, field *ast.Field, pkg *packages.Package, importSpecs []*ast.ImportSpec, filter InterfaceFilter) []MockedInterface {
+	var interfaces []MockedInterface
+	if interfaceType, ok := field.Type.(*ast.InterfaceType); ok {
+		if filter.Include(prefix + field.Names[0].Name) {
+			parsedInterface := parseInterface(field.Names[0].Name, interfaceType, pkg, importSpecs)
+			interfaces = append(interfaces, parsedInterface)
+		}
+	} else if structType, ok := field.Type.(*ast.StructType); ok {
+		for _, f := range structType.Fields.List {
+			interfaces = append(interfaces, parseNestedStructField(prefix+field.Names[0].Name+".", f, pkg, importSpecs, filter)...)
+		}
+	}
+
+	return interfaces
+}
+
+func parseInterface(name string, i *ast.InterfaceType, p *packages.Package, imports []*ast.ImportSpec) MockedInterface {
+	importHelper := newImportHelper(p.TypesInfo, imports, p)
+	mockedInterface := MockedInterface{
+		Name:        name,
+		PackageName: strings.ToLower(name),
+	}
+
+	for _, method := range i.Methods.List {
+		methodDefinition := MethodDefinition{
+			Name:    method.Names[0].Name,
+			Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
+		}
+
+		funcType := method.Type.(*ast.FuncType)
+		for paramIndex, param := range funcType.Params.List {
+			if len(param.Names) > 0 {
+				for _, paramName := range param.Names {
+					typeInfo := getTypeInfo(param.Type, p)
+					methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
+						Name:                paramName.Name,
+						Type:                typeInfo.name,
+						IsVariadic:          typeInfo.isVariadic,
+						IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
+					})
+				}
+			} else {
+				typeInfo := getTypeInfo(param.Type, p)
+				methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
+					Name:                "_p" + strconv.Itoa(paramIndex),
+					Type:                typeInfo.name,
+					IsVariadic:          typeInfo.isVariadic,
+					IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
+				})
+			}
+
+			importHelper.AddImportsRequiredForType(param.Type)
+		}
+
+		if funcType.Results != nil {
+			for _, result := range funcType.Results.List {
+				if len(result.Names) > 0 {
+					typeInfo := getTypeInfo(result.Type, p)
+					for _, resultName := range result.Names {
+						methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+							Name: resultName.Name,
+							Type: typeInfo.name,
+						})
+					}
+				} else {
+					typeInfo := getTypeInfo(result.Type, p)
+					methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+						Type: typeInfo.name,
+					})
+				}
+
+				importHelper.AddImportsRequiredForType(result.Type)
+			}
+		}
+
+		mockedInterface.Methods = append(mockedInterface.Methods, methodDefinition)
+	}
+
+	mockedInterface.Imports = importHelper.RequiredImports()
+
+	return mockedInterface
 }
 
 type typeInfo struct {

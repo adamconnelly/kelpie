@@ -586,6 +586,131 @@ type SecretsManager interface {
 	t.True(putSecret.Parameters[2].IsNonEmptyInterface)
 }
 
+func (t *ParserTests) Test_Parse_SupportsNestedInterfaces() {
+	// Arrange
+	input := `package config
+
+type IgnoredInterface interface {
+	DoSomething() error
+}
+
+type ConfigService struct {
+	Encrypter interface {
+		Encrypt(value string) (string, error)
+	}
+}`
+
+	t.interfaceFilter.Setup(interfacefilter.Include(kelpie.Any[string]()).Return(false))
+	t.interfaceFilter.Setup(interfacefilter.Include("ConfigService.Encrypter").Return(true))
+
+	// Act
+	result, err := t.ParseInput("config", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Len(result, 1)
+
+	encrypter := result[0]
+	t.Equal("Encrypter", encrypter.Name)
+
+	encrypt := slices.FirstOrPanic(encrypter.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Encrypt" })
+	t.Len(encrypt.Parameters, 1)
+	t.Equal("value", encrypt.Parameters[0].Name)
+	t.Equal("string", encrypt.Parameters[0].Type)
+
+	t.Len(encrypt.Results, 2)
+	t.Equal("string", encrypt.Results[0].Type)
+	t.Equal("error", encrypt.Results[1].Type)
+}
+
+func (t *ParserTests) Test_Parse_SupportsDeeplyNestedInterfaces() {
+	// Arrange
+	input := `package doublenested
+
+type DoubleNested struct {
+	FirstLevel struct {
+		DoubleNestedService interface {
+			DoSomething()
+		}
+		
+		SecondLevel struct {
+			TripleNestedService interface {
+				DoSomethingElse(a, b int) (string, error)
+			}
+		}
+	}
+}`
+
+	t.interfaceFilter.Setup(interfacefilter.Include(kelpie.Any[string]()).Return(false))
+	t.interfaceFilter.Setup(interfacefilter.Include("DoubleNested.FirstLevel.DoubleNestedService").Return(true))
+	t.interfaceFilter.Setup(interfacefilter.Include("DoubleNested.FirstLevel.SecondLevel.TripleNestedService").Return(true))
+
+	// Act
+	result, err := t.ParseInput("doublenested", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Len(result, 2)
+
+	doubleNested := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "DoubleNestedService" })
+	t.NotNil(doubleNested)
+
+	doSomething := slices.FirstOrPanic(doubleNested.Methods, func(m parser.MethodDefinition) bool { return m.Name == "DoSomething" })
+	t.Equal("DoSomething", doSomething.Name)
+	t.Len(doSomething.Parameters, 0)
+	t.Len(doSomething.Results, 0)
+
+	tripleNested := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "TripleNestedService" })
+	t.NotNil(tripleNested)
+
+	DoSomethingElse := slices.FirstOrPanic(tripleNested.Methods, func(m parser.MethodDefinition) bool { return m.Name == "DoSomethingElse" })
+	t.Equal("DoSomethingElse", DoSomethingElse.Name)
+	t.Len(DoSomethingElse.Parameters, 2)
+	t.Len(DoSomethingElse.Results, 2)
+}
+
+func (t *ParserTests) Test_MockedInterface_AnyMethodsHaveParameters_ReturnsFalseIfNoMethodsHaveParameters() {
+	// Arrange
+	mockedInterface := parser.MockedInterface{
+		Methods: []parser.MethodDefinition{
+			{
+				Name: "MethodWithoutParameters",
+			},
+		},
+	}
+
+	// Act
+	hasParameters := mockedInterface.AnyMethodsHaveParameters()
+
+	// Assert
+	t.False(hasParameters)
+}
+
+func (t *ParserTests) Test_MockedInterface_AnyMethodsHaveParameters_ReturnsTrueIfAtLeastOneMethodHasParameters() {
+	// Arrange
+	mockedInterface := parser.MockedInterface{
+		Methods: []parser.MethodDefinition{
+			{
+				Name: "MethodWithoutParameters",
+			},
+			{
+				Name: "MethodWithParameters",
+				Parameters: []parser.ParameterDefinition{
+					{
+						Name: "value",
+					},
+				},
+			},
+		},
+	}
+
+	// Act
+	hasParameters := mockedInterface.AnyMethodsHaveParameters()
+
+	// Assert
+	t.True(hasParameters)
+}
+
 // TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)
 // TODO: what about empty interfaces? Return a warning?
 

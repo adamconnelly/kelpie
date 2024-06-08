@@ -10,7 +10,8 @@ At the moment Kelpie is very much in development, and there are missing features
 
 The following is a list of known-outstanding features:
 
-- [ ] Generating mocks for inline interfaces in structs.
+- [ ] Add the ability to customize the name, package and output folder of the generated mocks.
+- [ ] Switch from `go:generate` to using a config file for more efficient mock generation in large code-bases.
 
 ## Quickstart
 
@@ -291,6 +292,61 @@ Similar to the way that you can match against no parameters with `kelpie.None[T]
 mock.Setup(printer.Printf("Don't panic!", kelpie.AnyArgs[any]()).Panic("Ok!"))
 ```
 
+### Nested Interfaces
+
+Kelpie supports mocking interfaces defined as struct fields. This can be useful in situations where you want to define an interface to decouple and make testing easier, but that interface isn't used anywhere else.
+
+To generate a mock for a nested interface, just use the format `<Struct Name>.<Field Name>` to reference the nested interface, like in the following example:
+
+```go
+//go:generate kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces ConfigService.Encrypter
+//go:generate kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces ConfigService.Storage
+type ConfigService struct {
+	Encrypter interface {
+		Encrypt(value string) (string, error)
+	}
+
+	Storage interface {
+		StoreConfigValue(key, value string) error
+	}
+}
+
+func (c *ConfigService) StoreConfig(key, value string) error {
+	encryptedValue, err := c.Encrypter.Encrypt(value)
+	if err != nil {
+		return err
+	}
+
+	return c.Storage.StoreConfigValue(key, encryptedValue)
+}
+```
+
+We can then use the mocks like this:
+
+```go
+func (t *NestedInterfacesTests) Test_ConfigService_StoresEncryptedValue() {
+	// Arrange
+	encrypterMock := encrypter.NewMock()
+	storageMock := storage.NewMock()
+
+	encrypterMock.Setup(encrypter.Encrypt("unencrypted").Return("encrypted", nil))
+
+	configService := &ConfigService{
+		Encrypter: encrypterMock.Instance(),
+		Storage:   storageMock.Instance(),
+	}
+
+	// Act
+	err := configService.StoreConfig("kelpie.testSecret", "unencrypted")
+
+	// Assert
+	t.NoError(err)
+	t.True(storageMock.Called(storage.StoreConfigValue("kelpie.testSecret", "encrypted")))
+}
+```
+
+If you need to mock an interface that's nested inside another struct, just specify the dot-separated path to the interface. For example `MyStruct.NestedField.InterfaceToMock`.
+
 ### Interface parameters
 
 Under the hood, Kelpie uses Go generics to allow either the actual parameter type or a Kelpie matcher to be passed in when setting up mocks or verifying expectations. For example, say we have the following method:
@@ -330,7 +386,7 @@ mock.Setup(secrets.Get(kelpie.Any[context.Context](), "MySecret").Return("SuperS
 Kelpie can happily mock interfaces that aren't part of your own source. You don't need to do anything special to mock an "external" interface - just specify the package and interface name you want to mock:
 
 ```go
-//go:generate go run ../cmd/kelpie generate --package io --interfaces Reader
+//go:generate kelpie generate --package io --interfaces Reader
 
 func (t *ExternalTypesTests) Test_CanMockAnExternalType() {
 	// Arrange
