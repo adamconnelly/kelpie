@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-//go:generate go run ../cmd/kelpie generate --package io --interfaces Reader
-
 type ExternalTypesTests struct {
 	suite.Suite
 }

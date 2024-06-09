@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -15,10 +16,23 @@ import (
 	"github.com/adamconnelly/kelpie/slices"
 )
 
+// ParsedPackage contains the information needed to generate mocks from parsing a package.
+type ParsedPackage struct {
+	// PackageDirectory is the directory containing the package source files.
+	PackageDirectory string
+
+	// Mocks are the mocks that were parsed from the package.
+	Mocks []MockedInterface
+}
+
 // MockedInterface represents an interface that a mock should be generated for.
 type MockedInterface struct {
 	// Name contains the name of the interface.
 	Name string
+
+	// FullName contains the full name of the interface. For interfaces nested inside a struct,
+	// this will contain the full dot-separated path to the interface, for example `UserService.ConfigRepository`.
+	FullName string
 
 	// PackageName contains the name of the package that the interface belongs to.
 	PackageName string
@@ -81,8 +95,6 @@ type ResultDefinition struct {
 	Type string
 }
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/parser --interfaces InterfaceFilter
-
 // InterfaceFilter is used to decide which interfaces mocks should be generated for.
 type InterfaceFilter interface {
 	// Include indicates that the specified interface should be included in the set of interfaces
@@ -104,11 +116,11 @@ func (f *IncludingInterfaceFilter) Include(name string) bool {
 }
 
 // Parse parses the source contained in the reader.
-func Parse(packageName string, directory string, filter InterfaceFilter) ([]MockedInterface, error) {
+func Parse(packageName string, directory string, filter InterfaceFilter) (*ParsedPackage, error) {
 	var interfaces []MockedInterface
 
 	pkgs, err := packages.Load(&packages.Config{
-		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo,
+		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedFiles,
 		Dir:   directory,
 		Tests: true,
 	}, "pattern="+packageName)
@@ -116,14 +128,23 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 		return nil, errors.Wrap(err, "could not load type information")
 	}
 
+	var packageDirectory string
+
 	for _, p := range pkgs {
+		if len(p.Syntax) > 0 && len(p.GoFiles) > 0 {
+			sourceDirectory := filepath.Dir(p.GoFiles[0])
+			if filepath.Base(sourceDirectory) == p.Name {
+				packageDirectory = filepath.Dir(p.GoFiles[0])
+			}
+		}
+
 		for _, fileNode := range p.Syntax {
 			ast.Inspect(fileNode, func(n ast.Node) bool {
 				if t, ok := n.(*ast.TypeSpec); ok {
 					if t.Name.IsExported() {
 						if interfaceType, ok := t.Type.(*ast.InterfaceType); ok {
 							if filter.Include(t.Name.Name) {
-								interfaces = append(interfaces, parseInterface(t.Name.Name, interfaceType, p, fileNode.Imports))
+								interfaces = append(interfaces, parseInterface(t.Name.Name, t.Name.Name, interfaceType, p, fileNode.Imports))
 							}
 						} else if structType, ok := t.Type.(*ast.StructType); ok {
 							for _, f := range structType.Fields.List {
@@ -143,15 +164,16 @@ func Parse(packageName string, directory string, filter InterfaceFilter) ([]Mock
 		}
 	}
 
-	return interfaces, nil
+	return &ParsedPackage{PackageDirectory: packageDirectory, Mocks: interfaces}, nil
 }
 
 func parseStructField(structNode *ast.TypeSpec, field *ast.Field, pkg *packages.Package, importSpecs []*ast.ImportSpec, filter InterfaceFilter) []MockedInterface {
 	var interfaces []MockedInterface
 	if structTypeInfo, ok := pkg.TypesInfo.Defs[structNode.Name]; ok {
 		if interfaceType, ok := field.Type.(*ast.InterfaceType); ok {
-			if filter.Include(structTypeInfo.Name() + "." + field.Names[0].Name) {
-				parsedInterface := parseInterface(field.Names[0].Name, interfaceType, pkg, importSpecs)
+			fullName := structTypeInfo.Name() + "." + field.Names[0].Name
+			if filter.Include(fullName) {
+				parsedInterface := parseInterface(field.Names[0].Name, fullName, interfaceType, pkg, importSpecs)
 				interfaces = append(interfaces, parsedInterface)
 			}
 		} else if structType, ok := field.Type.(*ast.StructType); ok {
@@ -167,8 +189,9 @@ func parseStructField(structNode *ast.TypeSpec, field *ast.Field, pkg *packages.
 func parseNestedStructField(prefix string, field *ast.Field, pkg *packages.Package, importSpecs []*ast.ImportSpec, filter InterfaceFilter) []MockedInterface {
 	var interfaces []MockedInterface
 	if interfaceType, ok := field.Type.(*ast.InterfaceType); ok {
-		if filter.Include(prefix + field.Names[0].Name) {
-			parsedInterface := parseInterface(field.Names[0].Name, interfaceType, pkg, importSpecs)
+		fullName := prefix + field.Names[0].Name
+		if filter.Include(fullName) {
+			parsedInterface := parseInterface(field.Names[0].Name, fullName, interfaceType, pkg, importSpecs)
 			interfaces = append(interfaces, parsedInterface)
 		}
 	} else if structType, ok := field.Type.(*ast.StructType); ok {
@@ -180,10 +203,11 @@ func parseNestedStructField(prefix string, field *ast.Field, pkg *packages.Packa
 	return interfaces
 }
 
-func parseInterface(name string, i *ast.InterfaceType, p *packages.Package, imports []*ast.ImportSpec) MockedInterface {
+func parseInterface(name, fullName string, i *ast.InterfaceType, p *packages.Package, imports []*ast.ImportSpec) MockedInterface {
 	importHelper := newImportHelper(p.TypesInfo, imports, p)
 	mockedInterface := MockedInterface{
 		Name:        name,
+		FullName:    fullName,
 		PackageName: strings.ToLower(name),
 	}
 

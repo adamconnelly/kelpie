@@ -17,8 +17,6 @@ func WithVersion(version string) func(*GetSecretOptions) {
 }
 
 // SecretsManager defines ways of accessing secrets.
-//
-//go:generate go run ../../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples/secretsmanager --interfaces SecretsManager
 type SecretsManager interface {
 	GetSecret(ctx context.Context, name string, opts ...func(*GetSecretOptions)) (*GetSecretResult, error)
 }

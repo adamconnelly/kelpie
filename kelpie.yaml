@@ -1,0 +1,35 @@
+version: 1
+packages:
+  - package: io
+    directory: examples/mocks
+    mocks:
+      - interface: Reader
+  - package: github.com/adamconnelly/kelpie/examples
+    mocks:
+      - interface: Maths
+      - interface: Sender
+      - interface: RegistrationService
+      - interface: Requester
+      - interface: ConfigService.Encrypter
+      - interface: ConfigService.Storage
+      - interface: DoubleNested.Internal.DoubleNestedService
+      - interface: AccountService
+      - interface: AlarmService
+      - interface: Printer
+  - package: github.com/adamconnelly/kelpie/examples/secretsmanager
+    # By default the mock is generated in a directory called `mock` in the package
+    # being mocked, but this can be adjusted.
+    directory: examples/mocks
+    mocks:
+      - interface: SecretsManager
+  - package: github.com/adamconnelly/kelpie/examples/users
+    mocks:
+      - interface: UserRepository
+        # Generation allows options related to code-generation to be adjusted.
+        generation:
+          # Package sets the package name generated for the mock. By default the package name
+          # is the lower-cased interface name.
+          package: userrepo
+  - package: github.com/adamconnelly/kelpie/parser
+    mocks:
+      - interface: InterfaceFilter

@@ -8,10 +8,9 @@ Kelpie is the most magical mock generator for Go. Kelpie aims to be easy to use,
 
 At the moment Kelpie is very much in development, and there are missing features and some pretty rough edges. You're of course welcome to use Kelpie, but just be prepared to hit problems and raise issues or PRs!
 
-The following is a list of known-outstanding features:
+The following is a list of known-outstanding features and known issues:
 
-- [ ] Add the ability to customize the name, package and output folder of the generated mocks.
-- [ ] Switch from `go:generate` to using a config file for more efficient mock generation in large code-bases.
+- [ ] For some reason Kelpie is generating multiple mocks when specifying built-in interfaces. See the [Mock Generation](#mock-generation) section for an example.
 
 ## Quickstart
 
@@ -53,6 +52,58 @@ service.Send("sender@sender.com", "someone@forbidden.com", "Hello")
 ```
 
 ## Using Kelpie
+
+### Mock Generation
+
+There are two main ways to generate your mocks:
+
+1. Using `go:generate` comments.
+2. Using a kelpie.yaml file.
+
+Using `go:generate` comments is simple - take a look at the [Quickstart](#quickstart) for an example.
+
+The other option is to add a kelpie.yaml file to your repo. The advantage of this is that all of your mocks are defined in one place, and mock generation can be significantly quicker than the `go:generate` approach because it avoids unnecessary duplicate parsing.
+
+To do this, add a kelpie.yaml file to the root of your repo like this:
+
+```yaml
+version: 1
+packages:
+  # You can mock packages that aren't part of your repo. To do this just specify the package
+  # name as normal:
+  - package: io
+    # When mocking packages outside your source tree, remember to specify the directory the
+    # mocks should be generated in.
+    directory: examples/mocks
+    mocks:
+      - interface: Reader
+  - package: github.com/adamconnelly/kelpie/examples
+    # Mocks defines the interfaces within your package that you want to generate mocks for.
+    mocks:
+      - interface: Maths
+      - interface: RegistrationService
+        generation:
+          # Package sets the package name generated for the mock. By default the package name
+          # is the lower-cased interface name.
+          package: regservice
+```
+
+To generate the mocks, just run `kelpie generate`:
+
+```shell
+$ kelpie generate
+Kelpie mock generation starting - preparing to add some magic to your code-base!
+
+Parsing package 'io' for interfaces to mock.
+  - Generating a mock for 'Reader'.
+  - Generating a mock for 'Reader'.
+
+Parsing package 'github.com/adamconnelly/kelpie/examples' for interfaces to mock.
+  - Generating a mock for 'Maths'.
+  - Generating a mock for 'RegistrationService'.
+
+Mock generation complete!
+```
 
 ### Default Behaviour
 

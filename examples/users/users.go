@@ -19,8 +19,6 @@ type User struct {
 	Type     UserType
 }
 
-//go:generate go run ../../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples/users --interfaces UserRepository
-
 // UserRepository provides a way of accessing users.
 type UserRepository interface {
 	FindUserByUsername(username string) (*User, error)

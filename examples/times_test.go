@@ -10,7 +10,6 @@ import (
 	"github.com/adamconnelly/kelpie/examples/mocks/alarmservice"
 )
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces AlarmService
 type AlarmService interface {
 	CreateAlarm(name string) error
 }

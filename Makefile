@@ -42,6 +42,7 @@ install-go-tools: ## Install dev tools
 .PHONY: generate
 generate: install-go-tools ## Generates any Kelpie mocks
 	go generate ./...
+	go run ./cmd/kelpie -- generate
 
 # prepare for code review
 reviewable:

@@ -8,15 +8,14 @@ import (
 
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/examples/mocks/printer"
+	sm "github.com/adamconnelly/kelpie/examples/mocks/secretsmanager"
 	"github.com/adamconnelly/kelpie/examples/secretsmanager"
-	sm "github.com/adamconnelly/kelpie/examples/secretsmanager/mocks/secretsmanager"
 )
 
 type VariadicFunctionsTests struct {
 	suite.Suite
 }
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces Printer
 type Printer interface {
 	Printf(formatString string, args ...interface{}) string
 }

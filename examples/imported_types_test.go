@@ -12,7 +12,6 @@ import (
 	"github.com/adamconnelly/kelpie/examples/mocks/requester"
 )
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces Requester
 type Requester interface {
 	MakeRequest(r *Request) (io.Reader, error)
 }

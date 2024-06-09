@@ -24,6 +24,22 @@ func (t *ParserTests) SetupTest() {
 	t.interfaceFilter.Setup(interfacefilter.Include(kelpie.Any[string]()).Return(true))
 }
 
+func (t *ParserTests) Test_Parse_ReturnsPackageDirectory() {
+	// Arrange
+	input := `package test
+
+type NotificationService interface {
+	SendNotification(recipient, message string) error
+}`
+
+	// Act
+	result, packageDir, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Equal(*packageDir, result.PackageDirectory)
+}
+
 func (t *ParserTests) Test_Parse_ReturnsAllInterfaces() {
 	// Arrange
 	input := `package test
@@ -37,13 +53,15 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 2)
-	t.Equal("NotificationService", result[0].Name)
-	t.Equal("UserService", result[1].Name)
+	t.Len(result.Mocks, 2)
+	t.Equal("NotificationService", result.Mocks[0].Name)
+	t.Equal("NotificationService", result.Mocks[0].FullName)
+	t.Equal("UserService", result.Mocks[1].Name)
+	t.Equal("UserService", result.Mocks[1].FullName)
 }
 
 func (t *ParserTests) Test_Parse_IgnoresInterfacesThatAreNotIncluded() {
@@ -61,12 +79,12 @@ type UserService interface {
 	t.interfaceFilter.Setup(interfacefilter.Include("UserService").Return(false))
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 1)
-	t.Equal("NotificationService", result[0].Name)
+	t.Len(result.Mocks, 1)
+	t.Equal("NotificationService", result.Mocks[0].Name)
 }
 
 func (t *ParserTests) Test_Parse_PopulatesInterfaceDetails() {
@@ -79,13 +97,13 @@ type NotificationService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 1)
+	t.Len(result.Mocks, 1)
 
-	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	notificationService := slices.FirstOrPanic(result.Mocks, func(mock parser.MockedInterface) bool {
 		return mock.Name == "NotificationService"
 	})
 	t.Equal("notificationservice", notificationService.PackageName)
@@ -129,13 +147,13 @@ type NotificationService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 1)
+	t.Len(result.Mocks, 1)
 
-	notificationService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	notificationService := slices.FirstOrPanic(result.Mocks, func(mock parser.MockedInterface) bool {
 		return mock.Name == "NotificationService"
 	})
 	t.Equal("notificationservice", notificationService.PackageName)
@@ -161,13 +179,13 @@ type AlarmService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 1)
+	t.Len(result.Mocks, 1)
 
-	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	alarmService := slices.FirstOrPanic(result.Mocks, func(mock parser.MockedInterface) bool {
 		return mock.Name == "AlarmService"
 	})
 	t.Equal("alarmservice", alarmService.PackageName)
@@ -195,13 +213,13 @@ type AlarmService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 1)
+	t.Len(result.Mocks, 1)
 
-	alarmService := slices.FirstOrPanic(result, func(mock parser.MockedInterface) bool {
+	alarmService := slices.FirstOrPanic(result.Mocks, func(mock parser.MockedInterface) bool {
 		return mock.Name == "AlarmService"
 	})
 
@@ -223,12 +241,12 @@ type EmailSender interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	sendNotification := result[0].Methods[0]
+	sendNotification := result.Mocks[0].Methods[0]
 	t.Equal("title", sendNotification.Parameters[1].Name)
 	t.Equal("*string", sendNotification.Parameters[1].Type)
 
@@ -244,12 +262,12 @@ type EmailSender interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	sendNotification := result[0].Methods[0]
+	sendNotification := result.Mocks[0].Methods[0]
 	t.Equal("title", sendNotification.Parameters[1].Name)
 	t.Equal("*string", sendNotification.Parameters[1].Type)
 
@@ -270,12 +288,12 @@ type Requester interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	requester := result[0]
+	requester := result.Mocks[0]
 	t.Len(requester.Imports, 2)
 	t.Contains(requester.Imports, `"io"`)
 	t.Contains(requester.Imports, `"net/http"`)
@@ -292,12 +310,12 @@ type Requester interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	requester := result[0]
+	requester := result.Mocks[0]
 	t.Len(requester.Imports, 1)
 	t.Contains(requester.Imports, `. "net/http"`)
 }
@@ -313,12 +331,12 @@ type Requester interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	requester := result[0]
+	requester := result.Mocks[0]
 	t.Len(requester.Imports, 1)
 	t.Contains(requester.Imports, `h "net/http"`)
 }
@@ -342,12 +360,12 @@ type Tracer interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("test", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	updater := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "Updater" })
+	updater := slices.FirstOrPanic(result.Mocks, func(i parser.MockedInterface) bool { return i.Name == "Updater" })
 
 	update := slices.FirstOrPanic(updater.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Update" })
 	valuesParam := slices.FirstOrPanic(update.Parameters, func(p parser.ParameterDefinition) bool { return p.Name == "values" })
@@ -360,7 +378,7 @@ type Tracer interface {
 	t.Len(updater.Imports, 1)
 	t.Contains(updater.Imports, `"io"`)
 
-	tracer := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "Tracer" })
+	tracer := slices.FirstOrPanic(result.Mocks, func(i parser.MockedInterface) bool { return i.Name == "Tracer" })
 	traces := slices.FirstOrPanic(tracer.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Traces" })
 	tracesResult := traces.Results[0]
 	t.Equal("map[time.Time]int", tracesResult.Type)
@@ -387,12 +405,12 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	requester := result[0]
+	requester := result.Mocks[0]
 
 	findUser := slices.FirstOrPanic(requester.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUser" })
 	t.Equal("*users.User", findUser.Results[0].Type)
@@ -415,12 +433,12 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	userService := result[0]
+	userService := result.Mocks[0]
 
 	updateUsers := slices.FirstOrPanic(userService.Methods, func(m parser.MethodDefinition) bool { return m.Name == "UpdateUsers" })
 	t.Equal("callback", updateUsers.Parameters[0].Name)
@@ -443,12 +461,12 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	userService := result[0]
+	userService := result.Mocks[0]
 
 	findUser := slices.FirstOrPanic(userService.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUser" })
 	t.Equal("_p0", findUser.Parameters[0].Name)
@@ -469,12 +487,12 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	userService := result[0]
+	userService := result.Mocks[0]
 
 	updateUserFn := slices.FirstOrPanic(userService.Methods, func(m parser.MethodDefinition) bool { return m.Name == "GetUserFn" })
 	t.Equal("", updateUserFn.Results[0].Name)
@@ -505,12 +523,12 @@ type UserService interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("users", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	requester := result[0]
+	requester := result.Mocks[0]
 
 	findUsers := slices.FirstOrPanic(requester.Methods, func(m parser.MethodDefinition) bool { return m.Name == "FindUsers" })
 	t.Equal("func(*users.FindUsersOptions)", findUsers.Parameters[0].Type)
@@ -529,12 +547,12 @@ type Printer interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("printing", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("printing", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	printer := result[0]
+	printer := result.Mocks[0]
 
 	printf := slices.FirstOrPanic(printer.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Printf" })
 	t.Equal("interface{}", printf.Parameters[1].Type)
@@ -561,12 +579,12 @@ type SecretsManager interface {
 }`
 
 	// Act
-	result, err := t.ParseInput("secrets", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("secrets", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
 
-	secretsManager := slices.FirstOrPanic(result, func(m parser.MockedInterface) bool { return m.Name == "SecretsManager" })
+	secretsManager := slices.FirstOrPanic(result.Mocks, func(m parser.MockedInterface) bool { return m.Name == "SecretsManager" })
 
 	getSecret := slices.FirstOrPanic(secretsManager.Methods, func(m parser.MethodDefinition) bool { return m.Name == "GetSecret" })
 	t.Equal("ctx", getSecret.Parameters[0].Name)
@@ -604,13 +622,13 @@ type ConfigService struct {
 	t.interfaceFilter.Setup(interfacefilter.Include("ConfigService.Encrypter").Return(true))
 
 	// Act
-	result, err := t.ParseInput("config", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("config", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 1)
+	t.Len(result.Mocks, 1)
 
-	encrypter := result[0]
+	encrypter := result.Mocks[0]
 	t.Equal("Encrypter", encrypter.Name)
 
 	encrypt := slices.FirstOrPanic(encrypter.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Encrypt" })
@@ -646,22 +664,24 @@ type DoubleNested struct {
 	t.interfaceFilter.Setup(interfacefilter.Include("DoubleNested.FirstLevel.SecondLevel.TripleNestedService").Return(true))
 
 	// Act
-	result, err := t.ParseInput("doublenested", input, t.interfaceFilter.Instance())
+	result, _, err := t.ParseInput("doublenested", input, t.interfaceFilter.Instance())
 
 	// Assert
 	t.NoError(err)
-	t.Len(result, 2)
+	t.Len(result.Mocks, 2)
 
-	doubleNested := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "DoubleNestedService" })
+	doubleNested := slices.FirstOrPanic(result.Mocks, func(i parser.MockedInterface) bool { return i.Name == "DoubleNestedService" })
 	t.NotNil(doubleNested)
+	t.Equal("DoubleNested.FirstLevel.DoubleNestedService", doubleNested.FullName)
 
 	doSomething := slices.FirstOrPanic(doubleNested.Methods, func(m parser.MethodDefinition) bool { return m.Name == "DoSomething" })
 	t.Equal("DoSomething", doSomething.Name)
 	t.Len(doSomething.Parameters, 0)
 	t.Len(doSomething.Results, 0)
 
-	tripleNested := slices.FirstOrPanic(result, func(i parser.MockedInterface) bool { return i.Name == "TripleNestedService" })
+	tripleNested := slices.FirstOrPanic(result.Mocks, func(i parser.MockedInterface) bool { return i.Name == "TripleNestedService" })
 	t.NotNil(tripleNested)
+	t.Equal("DoubleNested.FirstLevel.SecondLevel.TripleNestedService", tripleNested.FullName)
 
 	DoSomethingElse := slices.FirstOrPanic(tripleNested.Methods, func(m parser.MethodDefinition) bool { return m.Name == "DoSomethingElse" })
 	t.Equal("DoSomethingElse", DoSomethingElse.Name)
@@ -714,40 +734,45 @@ func (t *ParserTests) Test_MockedInterface_AnyMethodsHaveParameters_ReturnsTrueI
 // TODO: add a test for handling types that can't be resolved (e.g. because of a mistake in the code we're parsing)
 // TODO: what about empty interfaces? Return a warning?
 
-func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) ([]parser.MockedInterface, error) {
+func (t *ParserTests) ParseInput(packageName, input string, filter parser.InterfaceFilter) (*parser.ParsedPackage, *string, error) {
 	tmpDir, err := os.MkdirTemp("", "kelpie-parser-tests")
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create temp dir for module")
+		return nil, nil, errors.Wrap(err, "could not create temp dir for module")
 	}
 	defer os.RemoveAll(tmpDir)
 
 	packageDir := filepath.Join(tmpDir, packageName)
 
 	if err := os.Mkdir(packageDir, os.ModePerm); err != nil {
-		return nil, errors.Wrap(err, "could not create package directory")
+		return nil, nil, errors.Wrap(err, "could not create package directory")
 	}
 
 	goMod, err := os.Create(filepath.Join(tmpDir, "go.mod"))
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create file for go.mod")
+		return nil, nil, errors.Wrap(err, "could not create file for go.mod")
 	}
 
 	if _, err := goMod.WriteString(`module github.com/adamconnelly/kelpie-test
 
 go 1.22.1`); err != nil {
-		return nil, errors.Wrap(err, "could not write go.mod file")
+		return nil, nil, errors.Wrap(err, "could not write go.mod file")
 	}
 
 	testFile, err := os.Create(filepath.Join(packageDir, "test.go"))
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create temp file for source")
+		return nil, nil, errors.Wrap(err, "could not create temp file for source")
 	}
 
 	if _, err := testFile.WriteString(input); err != nil {
-		return nil, errors.Wrap(err, "could not write test case to file")
+		return nil, nil, errors.Wrap(err, "could not write test case to file")
 	}
 
-	return parser.Parse("github.com/adamconnelly/kelpie-test/"+packageName, tmpDir, filter)
+	pkg, err := parser.Parse("github.com/adamconnelly/kelpie-test/"+packageName, tmpDir, filter)
+	if err != nil {
+		return pkg, nil, err
+	}
+
+	return pkg, &packageDir, nil
 }
 
 func TestParser(t *testing.T) {

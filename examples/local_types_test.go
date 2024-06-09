@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/adamconnelly/kelpie/examples/users"
-	"github.com/adamconnelly/kelpie/examples/users/mocks/userrepository"
+	"github.com/adamconnelly/kelpie/examples/users/mocks/userrepo"
 )
 
 type LocalTypesTests struct {
@@ -15,8 +15,8 @@ type LocalTypesTests struct {
 
 func (t *LocalTypesTests) Test_CanReturnAValue() {
 	// Arrange
-	mock := userrepository.NewMock()
-	mock.Setup(userrepository.FindUserByUsername("adam@kelpie.com").Return(&users.User{ID: 123}, nil))
+	mock := userrepo.NewMock()
+	mock.Setup(userrepo.FindUserByUsername("adam@kelpie.com").Return(&users.User{ID: 123}, nil))
 
 	// Act
 	user, err := mock.Instance().FindUserByUsername("adam@kelpie.com")
@@ -29,8 +29,8 @@ func (t *LocalTypesTests) Test_CanReturnAValue() {
 
 func (t *LocalTypesTests) Test_CanMatchOnALocalType() {
 	// Arrange
-	mock := userrepository.NewMock()
-	mock.Setup(userrepository.GetAllUsersOfType(users.UserTypeAdmin).Return([]users.User{{ID: 1}, {ID: 2}}, nil))
+	mock := userrepo.NewMock()
+	mock.Setup(userrepo.GetAllUsersOfType(users.UserTypeAdmin).Return([]users.User{{ID: 1}, {ID: 2}}, nil))
 
 	// Act
 	admins, err := mock.Instance().GetAllUsersOfType(users.UserTypeAdmin)

@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces ConfigService.Encrypter
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces ConfigService.Storage
 type ConfigService struct {
 	Encrypter interface {
 		Encrypt(value string) (string, error)
@@ -96,7 +94,6 @@ func (t *NestedInterfacesTests) Test_ConfigService_HandlesStorageFailures() {
 	t.ErrorContains(err, "could not store value")
 }
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces DoubleNested.Internal.DoubleNestedService
 type DoubleNested struct {
 	Internal struct {
 		DoubleNestedService interface {

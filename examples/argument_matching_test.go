@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces Maths
 type Maths interface {
 	// Add adds a and b together and returns the result.
 	Add(a, b int) int
@@ -37,7 +36,6 @@ type Maths interface {
 	ParseInt(input string) (int, error)
 }
 
-//go:generate go run ../cmd/kelpie generate --package github.com/adamconnelly/kelpie/examples --interfaces Sender
 type Sender interface {
 	SendMessage(title *string, message string) error
 	SendMany(details map[string]string) error
