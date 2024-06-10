@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/tools/go/packages"
 
+	"github.com/adamconnelly/kelpie/maps"
 	"github.com/adamconnelly/kelpie/slices"
 )
 
@@ -117,8 +118,6 @@ func (f *IncludingInterfaceFilter) Include(name string) bool {
 
 // Parse parses the source contained in the reader.
 func Parse(packageName string, directory string, filter InterfaceFilter) (*ParsedPackage, error) {
-	var interfaces []MockedInterface
-
 	pkgs, err := packages.Load(&packages.Config{
 		Mode:  packages.NeedName | packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedFiles,
 		Dir:   directory,
@@ -129,6 +128,7 @@ func Parse(packageName string, directory string, filter InterfaceFilter) (*Parse
 	}
 
 	var packageDirectory string
+	interfaces := map[string]MockedInterface{}
 
 	for _, p := range pkgs {
 		if len(p.Syntax) > 0 && len(p.GoFiles) > 0 {
@@ -144,11 +144,14 @@ func Parse(packageName string, directory string, filter InterfaceFilter) (*Parse
 					if t.Name.IsExported() {
 						if interfaceType, ok := t.Type.(*ast.InterfaceType); ok {
 							if filter.Include(t.Name.Name) {
-								interfaces = append(interfaces, parseInterface(t.Name.Name, t.Name.Name, interfaceType, p, fileNode.Imports))
+								i := parseInterface(t.Name.Name, t.Name.Name, interfaceType, p, fileNode.Imports)
+								interfaces[i.FullName] = i
 							}
 						} else if structType, ok := t.Type.(*ast.StructType); ok {
 							for _, f := range structType.Fields.List {
-								interfaces = append(interfaces, parseStructField(t, f, p, fileNode.Imports, filter)...)
+								for _, i := range parseStructField(t, f, p, fileNode.Imports, filter) {
+									interfaces[i.FullName] = i
+								}
 							}
 						}
 					}
@@ -164,7 +167,7 @@ func Parse(packageName string, directory string, filter InterfaceFilter) (*Parse
 		}
 	}
 
-	return &ParsedPackage{PackageDirectory: packageDirectory, Mocks: interfaces}, nil
+	return &ParsedPackage{PackageDirectory: packageDirectory, Mocks: maps.Values(interfaces)}, nil
 }
 
 func parseStructField(structNode *ast.TypeSpec, field *ast.Field, pkg *packages.Package, importSpecs []*ast.ImportSpec, filter InterfaceFilter) []MockedInterface {

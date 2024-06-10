@@ -689,6 +689,21 @@ type DoubleNested struct {
 	t.Len(DoSomethingElse.Results, 2)
 }
 
+func (t *ParserTests) Test_Parse_CanParseStdlibInterfaces() {
+	// Arrange
+	t.interfaceFilter.Setup(interfacefilter.Include(kelpie.Any[string]()).Return(false))
+	t.interfaceFilter.Setup(interfacefilter.Include("Reader").Return(true))
+
+	// Act
+	result, err := parser.Parse("io", ".", t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+	t.Len(result.Mocks, 1)
+	t.Len(result.Mocks[0].Methods, 1)
+	t.Equal("Read", result.Mocks[0].Methods[0].Name)
+}
+
 func (t *ParserTests) Test_MockedInterface_AnyMethodsHaveParameters_ReturnsFalseIfNoMethodsHaveParameters() {
 	// Arrange
 	mockedInterface := parser.MockedInterface{

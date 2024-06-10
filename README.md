@@ -10,7 +10,7 @@ At the moment Kelpie is very much in development, and there are missing features
 
 The following is a list of known-outstanding features and known issues:
 
-- [ ] For some reason Kelpie is generating multiple mocks when specifying built-in interfaces. See the [Mock Generation](#mock-generation) section for an example.
+- [ ] Add support for embedded interfaces.
 
 ## Quickstart
 
@@ -95,7 +95,6 @@ $ kelpie generate
 Kelpie mock generation starting - preparing to add some magic to your code-base!
 
 Parsing package 'io' for interfaces to mock.
-  - Generating a mock for 'Reader'.
   - Generating a mock for 'Reader'.
 
 Parsing package 'github.com/adamconnelly/kelpie/examples' for interfaces to mock.

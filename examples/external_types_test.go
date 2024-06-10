@@ -3,9 +3,10 @@ package examples
 import (
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/adamconnelly/kelpie"
 	"github.com/adamconnelly/kelpie/examples/mocks/reader"
-	"github.com/stretchr/testify/suite"
 )
 
 type ExternalTypesTests struct {

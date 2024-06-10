@@ -12,3 +12,15 @@ func Keys[TKey comparable, TValue any](m map[TKey]TValue) []TKey {
 
 	return keys
 }
+
+// Values returns the values in the map.
+func Values[TKey comparable, TValue any](m map[TKey]TValue) []TValue {
+	values := make([]TValue, len(m))
+	index := 0
+	for _, v := range m {
+		values[index] = v
+		index++
+	}
+
+	return values
+}
