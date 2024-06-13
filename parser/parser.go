@@ -5,6 +5,7 @@ package parser
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"path/filepath"
 	"strconv"
@@ -215,63 +216,106 @@ func parseInterface(name, fullName string, i *ast.InterfaceType, p *packages.Pac
 	}
 
 	for _, method := range i.Methods.List {
-		methodDefinition := MethodDefinition{
-			Name:    method.Names[0].Name,
-			Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
-		}
-
-		funcType := method.Type.(*ast.FuncType)
-		for paramIndex, param := range funcType.Params.List {
-			if len(param.Names) > 0 {
-				for _, paramName := range param.Names {
-					typeInfo := getTypeInfo(param.Type, p)
-					methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-						Name:                paramName.Name,
-						Type:                typeInfo.name,
-						IsVariadic:          typeInfo.isVariadic,
-						IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
-					})
-				}
-			} else {
-				typeInfo := getTypeInfo(param.Type, p)
-				methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
-					Name:                "_p" + strconv.Itoa(paramIndex),
-					Type:                typeInfo.name,
-					IsVariadic:          typeInfo.isVariadic,
-					IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
-				})
-			}
-
-			importHelper.AddImportsRequiredForType(param.Type)
-		}
-
-		if funcType.Results != nil {
-			for _, result := range funcType.Results.List {
-				if len(result.Names) > 0 {
-					typeInfo := getTypeInfo(result.Type, p)
-					for _, resultName := range result.Names {
-						methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-							Name: resultName.Name,
-							Type: typeInfo.name,
-						})
-					}
-				} else {
-					typeInfo := getTypeInfo(result.Type, p)
-					methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
-						Type: typeInfo.name,
-					})
+		if len(method.Names) > 0 {
+			mockedInterface.Methods = append(mockedInterface.Methods, parseMethodFromAST(method, importHelper, p))
+		} else {
+			// If the method has no name, it means it's an embedded interface. In this case we
+			// need to find the definition of the interface in the AST in order to get the methods.
+			fieldType := p.TypesInfo.TypeOf(method.Type)
+			if _, ok := fieldType.(*types.Named); ok {
+				embeddedTypeName := method.Type.(*ast.Ident)
+				embeddedObject := p.TypesInfo.ObjectOf(embeddedTypeName)
+				embeddedInterfaceType := findInterfaceTypeFromPos(p, embeddedObject.Pos())
+				if embeddedInterfaceType == nil {
+					panic(fmt.Sprintf("could not find interface definition for %s - this is a bug in Kelpie!", embeddedTypeName.Name))
 				}
 
-				importHelper.AddImportsRequiredForType(result.Type)
+				interfaceDefinition := parseInterface(embeddedTypeName.Name, embeddedTypeName.Name, embeddedInterfaceType, p, imports)
+				mockedInterface.Methods = append(mockedInterface.Methods, interfaceDefinition.Methods...)
 			}
 		}
-
-		mockedInterface.Methods = append(mockedInterface.Methods, methodDefinition)
 	}
 
 	mockedInterface.Imports = importHelper.RequiredImports()
 
 	return mockedInterface
+}
+
+func findInterfaceTypeFromPos(p *packages.Package, interfacePos token.Pos) *ast.InterfaceType {
+	var interfaceDefinition *ast.InterfaceType
+	for _, file := range p.Syntax {
+		ast.Inspect(file, func(n ast.Node) bool {
+			if n == nil || interfaceDefinition != nil {
+				return false
+			}
+
+			if n.Pos() == interfacePos {
+				if typeSpec, ok := n.(*ast.TypeSpec); ok {
+					interfaceDefinition = typeSpec.Type.(*ast.InterfaceType)
+				}
+				return false
+			}
+
+			return true
+		})
+	}
+
+	return interfaceDefinition
+}
+
+func parseMethodFromAST(method *ast.Field, importHelper *importHelper, p *packages.Package) MethodDefinition {
+	methodDefinition := MethodDefinition{
+		Name:    method.Names[0].Name,
+		Comment: strings.TrimSuffix(method.Doc.Text(), "\n"),
+	}
+
+	funcType := method.Type.(*ast.FuncType)
+	for paramIndex, param := range funcType.Params.List {
+		if len(param.Names) > 0 {
+			for _, paramName := range param.Names {
+				typeInfo := getTypeInfo(param.Type, p)
+				methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
+					Name:                paramName.Name,
+					Type:                typeInfo.name,
+					IsVariadic:          typeInfo.isVariadic,
+					IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
+				})
+			}
+		} else {
+			typeInfo := getTypeInfo(param.Type, p)
+			methodDefinition.Parameters = append(methodDefinition.Parameters, ParameterDefinition{
+				Name:                "_p" + strconv.Itoa(paramIndex),
+				Type:                typeInfo.name,
+				IsVariadic:          typeInfo.isVariadic,
+				IsNonEmptyInterface: typeInfo.isNonEmptyInterface,
+			})
+		}
+
+		importHelper.AddImportsRequiredForType(param.Type)
+	}
+
+	if funcType.Results != nil {
+		for _, result := range funcType.Results.List {
+			if len(result.Names) > 0 {
+				typeInfo := getTypeInfo(result.Type, p)
+				for _, resultName := range result.Names {
+					methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+						Name: resultName.Name,
+						Type: typeInfo.name,
+					})
+				}
+			} else {
+				typeInfo := getTypeInfo(result.Type, p)
+				methodDefinition.Results = append(methodDefinition.Results, ResultDefinition{
+					Type: typeInfo.name,
+				})
+			}
+
+			importHelper.AddImportsRequiredForType(result.Type)
+		}
+	}
+
+	return methodDefinition
 }
 
 type typeInfo struct {

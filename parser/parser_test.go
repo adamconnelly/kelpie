@@ -704,6 +704,37 @@ func (t *ParserTests) Test_Parse_CanParseStdlibInterfaces() {
 	t.Equal("Read", result.Mocks[0].Methods[0].Name)
 }
 
+func (t *ParserTests) Test_Parse_SupportsEmbeddedInterfaces() {
+	// Arrange
+	input := `package updown
+
+type Upper interface {
+	Up()
+}
+
+type Downer interface {
+	Down()
+}
+	
+type UpDowner interface {
+	Upper
+	Downer
+}`
+
+	// Act
+	result, _, err := t.ParseInput("updown", input, t.interfaceFilter.Instance())
+
+	// Assert
+	t.NoError(err)
+
+	upDowner := slices.FirstOrPanic(result.Mocks, func(i parser.MockedInterface) bool { return i.Name == "UpDowner" })
+
+	t.True(slices.Contains(upDowner.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Up" }))
+	t.True(slices.Contains(upDowner.Methods, func(m parser.MethodDefinition) bool { return m.Name == "Down" }))
+}
+
+// TODO: add a test for embedding interfaces from different packages
+
 func (t *ParserTests) Test_MockedInterface_AnyMethodsHaveParameters_ReturnsFalseIfNoMethodsHaveParameters() {
 	// Arrange
 	mockedInterface := parser.MockedInterface{
